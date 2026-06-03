@@ -85,7 +85,6 @@ export function PrintActionsPanel({
                 className="action-button-main"
                 type="button"
                 onClick={() => {
-                  setPreviewTab("text");
                   onPrintText();
                 }}
               >
@@ -110,7 +109,6 @@ export function PrintActionsPanel({
                 className="action-button-main"
                 type="button"
                 onClick={() => {
-                  setPreviewTab("qr");
                   onPrintQr();
                 }}
               >
@@ -118,41 +116,72 @@ export function PrintActionsPanel({
               </button>
             </div>
 
-            <div className="action-row-group image-group">
-              <div className="input-col flex-2">
-                <label>{uiLanguage === "tr" ? "Görsel Base64 Verisi" : "Image Base64 Data"}</label>
-                <input
-                  value={imageBase64}
-                  onChange={(event) => {
-                    onImageBase64Change(event.target.value);
-                    setPreviewTab("image");
-                  }}
-                  onFocus={() => setPreviewTab("image")}
-                  placeholder="BASE64_IMAGE_DATA"
-                />
+            <div className="action-row-group image-group" style={{ flexDirection: "column", alignItems: "stretch", gap: "14px" }}>
+              {/* Row 1: Image Base64 + Upload Button */}
+              <div style={{ display: "flex", gap: "12px", width: "100%", alignItems: "flex-end" }}>
+                <div className="input-col" style={{ flex: 1 }}>
+                  <label>{uiLanguage === "tr" ? "Görsel Base64 Verisi" : "Image Base64 Data"}</label>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      value={imageBase64}
+                      onChange={(event) => {
+                        onImageBase64Change(event.target.value);
+                        setPreviewTab("image");
+                      }}
+                      onFocus={() => setPreviewTab("image")}
+                      placeholder="BASE64_IMAGE_DATA"
+                      style={{ flex: 1 }}
+                    />
+                    <label className="ghost-button" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: "0.8rem", padding: "0 16px", minHeight: "44px", margin: 0, whiteSpace: "nowrap" }}>
+                      {uiLanguage === "tr" ? "Yükle" : "Upload"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) {
+                            onImageFilenameChange(file.name);
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              const base64String = reader.result as string;
+                              onImageBase64Change(base64String);
+                            };
+                            reader.readAsDataURL(file);
+                            setPreviewTab("image");
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div className="input-col flex-1">
-                <label>{uiLanguage === "tr" ? "Dosya Adı" : "Filename"}</label>
-                <input
-                  value={imageFilename}
-                  onChange={(event) => {
-                    onImageFilenameChange(event.target.value);
-                    setPreviewTab("image");
+
+              {/* Row 2: Filename + Print Image Button */}
+              <div style={{ display: "flex", gap: "12px", width: "100%", alignItems: "flex-end" }}>
+                <div className="input-col" style={{ flex: 1 }}>
+                  <label>{uiLanguage === "tr" ? "Dosya Adı" : "Filename"}</label>
+                  <input
+                    value={imageFilename}
+                    onChange={(event) => {
+                      onImageFilenameChange(event.target.value);
+                      setPreviewTab("image");
+                    }}
+                    onFocus={() => setPreviewTab("image")}
+                    placeholder="receipt.png"
+                  />
+                </div>
+                <button
+                  className="action-button-main"
+                  type="button"
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    onPrintImage();
                   }}
-                  onFocus={() => setPreviewTab("image")}
-                  placeholder="receipt.png"
-                />
+                >
+                  {uiLanguage === "tr" ? "Görsel Yazdır" : "Print Image"}
+                </button>
               </div>
-              <button
-                className="action-button-main"
-                type="button"
-                onClick={() => {
-                  setPreviewTab("image");
-                  onPrintImage();
-                }}
-              >
-                {uiLanguage === "tr" ? "Görsel Yazdır" : "Print Image"}
-              </button>
             </div>
 
             <div className="action-row-group single-btn">
@@ -160,10 +189,8 @@ export function PrintActionsPanel({
                 className="primary-button print-receipt-btn"
                 type="button"
                 onClick={() => {
-                  setPreviewTab("receipt");
                   onPrintReceipt();
                 }}
-                onMouseEnter={() => setPreviewTab("receipt")}
               >
                 {uiLanguage === "tr" ? "Örnek Fiş Yazdır" : "Print Sample Receipt"}
               </button>
@@ -251,12 +278,22 @@ export function PrintActionsPanel({
                   <span style={{ fontSize: "0.7rem", color: "#666", display: "block", marginBottom: "4px", fontStyle: "italic" }}>
                     {language === "tr" ? "[ GÖRSEL BASKI ÖNİZLEMESİ ]" : "[ BITMAP IMAGE PREVIEW ]"}
                   </span>
-                  <div style={{ border: "1px dashed #888", padding: "18px 10px", margin: "8px 0", borderRadius: "3px", background: "#f5f5f0" }}>
-                    {language === "tr" ? "[ GÖRSEL YAZDIRILDI ]" : "[ IMAGE RENDERED ]"}
-                    <br />
-                    <span style={{ fontSize: "0.68rem", color: "#555", fontWeight: "bold" }}>
-                      {imageFilename || "receipt.png"}
-                    </span>
+                  <div style={{ border: "1px dashed #888", padding: "12px 8px", margin: "8px 0", borderRadius: "3px", background: "#f5f5f0" }}>
+                    {imageBase64 && imageBase64 !== "BASE64_IMAGE_DATA" ? (
+                      <img
+                        src={imageBase64.startsWith("data:image/") ? imageBase64 : `data:image/png;base64,${imageBase64}`}
+                        alt="Preview"
+                        style={{ maxWidth: "100%", maxHeight: "140px", height: "auto", display: "block", margin: "0 auto", borderRadius: "2px", objectFit: "contain" }}
+                      />
+                    ) : (
+                      <>
+                        {language === "tr" ? "[ GÖRSEL YAZDIRILDI ]" : "[ IMAGE RENDERED ]"}
+                        <br />
+                        <span style={{ fontSize: "0.68rem", color: "#555", fontWeight: "bold" }}>
+                          {imageFilename || "receipt.png"}
+                        </span>
+                      </>
+                    )}
                   </div>
                   <span style={{ fontSize: "0.65rem", color: "#888", display: "block" }}>
                     Base64: {imageBase64 ? `${imageBase64.substring(0, 24)}...` : (language === "tr" ? "(Boş)" : "(Empty)")}
