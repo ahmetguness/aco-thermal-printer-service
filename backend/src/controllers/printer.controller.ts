@@ -12,6 +12,7 @@ import type {
   ConnectionInfo,
   PrintablePayload,
   PrintJob,
+  PrinterHealth,
   PrinterStatus,
 } from "../types/printer.types";
 import {
@@ -20,6 +21,7 @@ import {
   isQrPrintPayload,
   isReceiptPrintPayload,
   isReprintRequestBody,
+  isSetMockHealthRequestBody,
   isTextPrintPayload,
 } from "../utils/validators";
 
@@ -141,6 +143,30 @@ export class PrinterController {
     res.send(csv);
   };
 
+  setMockHealth = (
+    req: Request<EmptyParams, ApiResponse<PrinterHealth>, unknown>,
+    res: Response<ApiResponse<PrinterHealth>>,
+  ): void => {
+    if (!isSetMockHealthRequestBody(req.body)) {
+      this.sendValidationError(
+        res,
+        "Body must include at least one valid health field: paper, cover or temperature.",
+      );
+      return;
+    }
+
+    const health = printerService.setHealth(req.body);
+    res.json(createApiSuccess(health));
+  };
+
+  simulateDisconnect = async (
+    _req: Request<EmptyParams, ApiResponse<ConnectionInfo>>,
+    res: Response<ApiResponse<ConnectionInfo>>,
+  ): Promise<void> => {
+    const connection = await printerService.simulateDisconnect();
+    res.json(createApiSuccess(connection));
+  };
+
   private sendValidationError<T>(res: Response<ApiResponse<T>>, message: string): void {
     res.status(400).json(
       createApiFailure({
@@ -151,8 +177,20 @@ export class PrinterController {
   }
 
   private sendError<T>(res: Response<ApiResponse<T>>, error: ApiError): void {
-    const statusCode = error.code === "NOT_FOUND" ? 404 : 500;
+    const statusCode = this.getHttpStatusCode(error);
     res.status(statusCode).json(createApiFailure(error));
+  }
+
+  private getHttpStatusCode(error: ApiError): number {
+    if (error.code === "BAD_REQUEST" || error.code === "VALIDATION_ERROR") {
+      return 400;
+    }
+
+    if (error.code === "NOT_FOUND") {
+      return 404;
+    }
+
+    return 500;
   }
 
   private errorToApiError(error: unknown): ApiError {
@@ -160,6 +198,14 @@ export class PrinterController {
       return {
         code: "NOT_FOUND",
         message: "Print job not found.",
+        detail: error.message,
+      };
+    }
+
+    if (error instanceof Error && error.message.startsWith("Print job is not failed")) {
+      return {
+        code: "BAD_REQUEST",
+        message: "Only failed jobs can be reprinted.",
         detail: error.message,
       };
     }

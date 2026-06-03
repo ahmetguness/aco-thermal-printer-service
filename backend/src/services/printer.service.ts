@@ -24,6 +24,8 @@ type SimulatablePayload = PrintablePayload & {
   simulateError?: PrinterErrorCode;
 };
 
+const REPRINTABLE_JOB_STATUS = "failed";
+
 export class MockPrinterService {
   private readonly escposBuilder = new EscposBuilder();
   private readonly failedImageDir = path.resolve(process.cwd(), "storage", "failed-images");
@@ -76,6 +78,10 @@ export class MockPrinterService {
       throw new Error(`Print job not found: ${jobId}`);
     }
 
+    if (originalJob.status !== REPRINTABLE_JOB_STATUS) {
+      throw new Error(`Print job is not failed: ${jobId}`);
+    }
+
     const reprintJob = await this.print(originalJob.type, originalJob.payload);
 
     await loggerService.append({
@@ -104,16 +110,7 @@ export class MockPrinterService {
   }
 
   async simulateDisconnect(): Promise<ConnectionInfo> {
-    const previousMode = this.connection.mode;
-    this.connection = this.adapter.scheduleReconnect();
-
-    await loggerService.append({
-      op: "reconnect_scheduled",
-      conn: previousMode,
-      status: "error",
-      message: "Connection lost. Reconnect scheduled by mock adapter",
-      error: this.createError("COMM_ERROR"),
-    });
+    await this.scheduleAutoReconnect();
 
     return this.connection;
   }
@@ -126,6 +123,10 @@ export class MockPrinterService {
     const error = this.getBlockingError(payload);
 
     if (error) {
+      if (error.code === "COMM_ERROR") {
+        await this.scheduleAutoReconnect();
+      }
+
       const failedJob = this.jobQueue.updateJobStatus(job.id, "failed", error);
       await this.persistFailedImageIfNeeded(failedJob);
       await this.logJob(failedJob, error);
@@ -137,6 +138,10 @@ export class MockPrinterService {
     const adapterResult = await this.adapter.send(commandPayload);
 
     if (!adapterResult.success) {
+      if (adapterResult.error.code === "COMM_ERROR") {
+        await this.scheduleAutoReconnect();
+      }
+
       const failedJob = this.jobQueue.updateJobStatus(job.id, "failed", adapterResult.error);
       await this.persistFailedImageIfNeeded(failedJob);
       await this.logJob(failedJob, adapterResult.error, commandPayload);
@@ -228,6 +233,43 @@ export class MockPrinterService {
     };
 
     return messages[code];
+  }
+
+  private async scheduleAutoReconnect(): Promise<void> {
+    const previousMode = this.connection.mode;
+    const schedule = this.adapter.scheduleReconnect();
+    this.connection = schedule.connection;
+
+    await loggerService.append({
+      op: "reconnect_scheduled",
+      conn: previousMode,
+      status: "error",
+      message: `Connection lost. Reconnect scheduled in ${schedule.delayMs}ms`,
+      error: this.createError("COMM_ERROR"),
+      meta: {
+        nextReconnectAt: schedule.connection.nextReconnectAt,
+        reconnectAttempts: schedule.connection.reconnectAttempts,
+      },
+    });
+
+    if (!previousMode) {
+      return;
+    }
+
+    setTimeout(() => {
+      void this.completeReconnect(previousMode);
+    }, schedule.delayMs);
+  }
+
+  private async completeReconnect(mode: ConnectionMode): Promise<void> {
+    this.connection = await this.adapter.connect(mode);
+
+    await loggerService.append({
+      op: "reconnect_success",
+      conn: mode,
+      status: "ok",
+      message: `Reconnected through ${mode.toUpperCase()} mock adapter`,
+    });
   }
 
   private async logJob(

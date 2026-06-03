@@ -1,0 +1,29 @@
+{
+  "machineId": "ACO-TEST-0001-0001",
+  "rewardName": "Aco Recycling Default Reward",
+  "currency": "TRY",
+  "issuedAt": "2025-09-16T16:19:02.000Z",
+  "items": [
+    {
+      "product": "Glass",
+      "quantity": 0,
+      "reward": 0
+    },
+    {
+      "product": "Plastic",
+      "quantity": 2,
+      "reward": 2
+    },
+    {
+      "product": "Metal",
+      "quantity": 1,
+      "reward": 1
+    },
+    {
+      "product": "Tetrapak",
+      "quantity": 0,
+      "reward": 0
+    }
+  ],
+  "qrPayload": "ACO-TEST-0001-0001|3.00"
+}

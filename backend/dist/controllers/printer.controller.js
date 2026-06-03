@@ -74,6 +74,18 @@ class PrinterController {
         res.setHeader("Content-Disposition", 'attachment; filename="logs.csv"');
         res.send(csv);
     };
+    setMockHealth = (req, res) => {
+        if (!(0, validators_1.isSetMockHealthRequestBody)(req.body)) {
+            this.sendValidationError(res, "Body must include at least one valid health field: paper, cover or temperature.");
+            return;
+        }
+        const health = printer_service_1.printerService.setHealth(req.body);
+        res.json((0, api_types_1.createApiSuccess)(health));
+    };
+    simulateDisconnect = async (_req, res) => {
+        const connection = await printer_service_1.printerService.simulateDisconnect();
+        res.json((0, api_types_1.createApiSuccess)(connection));
+    };
     sendValidationError(res, message) {
         res.status(400).json((0, api_types_1.createApiFailure)({
             code: "VALIDATION_ERROR",
@@ -81,14 +93,30 @@ class PrinterController {
         }));
     }
     sendError(res, error) {
-        const statusCode = error.code === "NOT_FOUND" ? 404 : 500;
+        const statusCode = this.getHttpStatusCode(error);
         res.status(statusCode).json((0, api_types_1.createApiFailure)(error));
+    }
+    getHttpStatusCode(error) {
+        if (error.code === "BAD_REQUEST" || error.code === "VALIDATION_ERROR") {
+            return 400;
+        }
+        if (error.code === "NOT_FOUND") {
+            return 404;
+        }
+        return 500;
     }
     errorToApiError(error) {
         if (error instanceof Error && error.message.startsWith("Print job not found")) {
             return {
                 code: "NOT_FOUND",
                 message: "Print job not found.",
+                detail: error.message,
+            };
+        }
+        if (error instanceof Error && error.message.startsWith("Print job is not failed")) {
+            return {
+                code: "BAD_REQUEST",
+                message: "Only failed jobs can be reprinted.",
                 detail: error.message,
             };
         }

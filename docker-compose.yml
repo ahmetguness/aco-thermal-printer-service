@@ -1,0 +1,16 @@
+services:
+  thermal-printer-service:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aco-thermal-printer-service
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+    volumes:
+      - backend-storage:/app/storage
+    restart: unless-stopped
+
+volumes:
+  backend-storage:

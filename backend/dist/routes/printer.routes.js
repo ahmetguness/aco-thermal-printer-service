@@ -13,3 +13,5 @@ exports.printerRouter.post("/print/receipt", printer_controller_1.printerControl
 exports.printerRouter.post("/reprint", printer_controller_1.printerController.reprint);
 exports.printerRouter.get("/logs", printer_controller_1.printerController.logs);
 exports.printerRouter.get("/logs/export", printer_controller_1.printerController.logsExport);
+exports.printerRouter.post("/mock/health", printer_controller_1.printerController.setMockHealth);
+exports.printerRouter.post("/mock/disconnect", printer_controller_1.printerController.simulateDisconnect);

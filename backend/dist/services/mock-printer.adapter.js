@@ -61,7 +61,10 @@ class MockPrinterAdapter {
             nextReconnectAt: new Date(Date.now() + delayMs).toISOString(),
             lastConnectedAt: this.connection.lastConnectedAt,
         };
-        return this.connection;
+        return {
+            connection: this.connection,
+            delayMs,
+        };
     }
     createError(code) {
         const messages = {

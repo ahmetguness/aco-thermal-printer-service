@@ -7,6 +7,7 @@ import type {
   PrinterError,
   PrinterErrorCode,
   PrinterHealth,
+  ReconnectSchedule,
 } from "../types/printer.types";
 
 export class MockPrinterAdapter implements PrinterAdapter {
@@ -69,7 +70,7 @@ export class MockPrinterAdapter implements PrinterAdapter {
     return this.health;
   }
 
-  scheduleReconnect(): ConnectionInfo {
+  scheduleReconnect(): ReconnectSchedule {
     const reconnectAttempts = this.connection.reconnectAttempts + 1;
     const delayMs = Math.min(30_000, 1000 * 2 ** (reconnectAttempts - 1));
 
@@ -81,7 +82,10 @@ export class MockPrinterAdapter implements PrinterAdapter {
       lastConnectedAt: this.connection.lastConnectedAt,
     };
 
-    return this.connection;
+    return {
+      connection: this.connection,
+      delayMs,
+    };
   }
 
   private createError(code: PrinterErrorCode): PrinterError {

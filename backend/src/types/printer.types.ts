@@ -30,6 +30,10 @@ export interface PrinterHealth {
   temperature: "normal" | "overheat";
 }
 
+export interface SimulationOptions {
+  simulateError?: PrinterErrorCode;
+}
+
 export interface ConnectionInfo {
   mode: ConnectionMode | null;
   state: ConnectionState;
@@ -65,18 +69,18 @@ export interface PrinterStatus {
   queue: QueueSummary;
 }
 
-export interface TextPrintPayload {
+export interface TextPrintPayload extends SimulationOptions {
   text: string;
   language?: "tr" | "en" | string;
 }
 
-export interface ImagePrintPayload {
+export interface ImagePrintPayload extends SimulationOptions {
   imageBase64?: string;
   imageUrl?: string;
   filename?: string;
 }
 
-export interface QrPrintPayload {
+export interface QrPrintPayload extends SimulationOptions {
   data: string;
 }
 
@@ -86,7 +90,7 @@ export interface ReceiptItem {
   reward: number;
 }
 
-export interface ReceiptPrintPayload {
+export interface ReceiptPrintPayload extends SimulationOptions {
   machineId: string;
   rewardName: string;
   currency?: string;
@@ -124,4 +128,9 @@ export interface PrinterAdapter {
   connect(mode: ConnectionMode): Promise<ConnectionInfo>;
   send(command: PrinterCommandPayload): Promise<PrinterAdapterResult>;
   getHealth(): PrinterHealth;
+}
+
+export interface ReconnectSchedule {
+  connection: ConnectionInfo;
+  delayMs: number;
 }

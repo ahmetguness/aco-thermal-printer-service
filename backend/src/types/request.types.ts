@@ -1,6 +1,7 @@
 import type {
   ConnectionMode,
   ImagePrintPayload,
+  PrinterHealth,
   QrPrintPayload,
   ReceiptPrintPayload,
   TextPrintPayload,
@@ -21,3 +22,5 @@ export interface PrintReceiptRequestBody extends ReceiptPrintPayload {}
 export interface ReprintRequestBody {
   jobId: string;
 }
+
+export interface SetMockHealthRequestBody extends Partial<PrinterHealth> {}

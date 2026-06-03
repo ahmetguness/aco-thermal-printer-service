@@ -12,3 +12,5 @@ printerRouter.post("/print/receipt", printerController.printReceipt);
 printerRouter.post("/reprint", printerController.reprint);
 printerRouter.get("/logs", printerController.logs);
 printerRouter.get("/logs/export", printerController.logsExport);
+printerRouter.post("/mock/health", printerController.setMockHealth);
+printerRouter.post("/mock/disconnect", printerController.simulateDisconnect);

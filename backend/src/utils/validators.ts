@@ -1,6 +1,7 @@
 import type {
   ConnectionMode,
   ImagePrintPayload,
+  PrinterErrorCode,
   QrPrintPayload,
   ReceiptItem,
   ReceiptPrintPayload,
@@ -9,10 +10,22 @@ import type {
 import type {
   ConnectRequestBody,
   ReprintRequestBody,
+  SetMockHealthRequestBody,
 } from "../types/request.types";
 
 export function isConnectionMode(value: unknown): value is ConnectionMode {
   return value === "usb" || value === "lan";
+}
+
+export function isPrinterErrorCode(value: unknown): value is PrinterErrorCode {
+  return (
+    value === "PAPER_OUT" ||
+    value === "PAPER_JAM" ||
+    value === "COVER_OPEN" ||
+    value === "OVERHEAT" ||
+    value === "COMM_ERROR" ||
+    value === "UNKNOWN_COMMAND"
+  );
 }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -28,7 +41,7 @@ export function isConnectRequestBody(value: unknown): value is ConnectRequestBod
 }
 
 export function isTextPrintPayload(value: unknown): value is TextPrintPayload {
-  return isRecord(value) && isNonEmptyString(value.text);
+  return isRecord(value) && isNonEmptyString(value.text) && hasValidSimulationOptions(value);
 }
 
 export function isImagePrintPayload(value: unknown): value is ImagePrintPayload {
@@ -41,11 +54,11 @@ export function isImagePrintPayload(value: unknown): value is ImagePrintPayload 
   const hasFilename = value.filename === undefined || isNonEmptyString(value.filename);
   const hasImageSource = isNonEmptyString(value.imageBase64) || isNonEmptyString(value.imageUrl);
 
-  return hasImageBase64 && hasImageUrl && hasFilename && hasImageSource;
+  return hasImageBase64 && hasImageUrl && hasFilename && hasImageSource && hasValidSimulationOptions(value);
 }
 
 export function isQrPrintPayload(value: unknown): value is QrPrintPayload {
-  return isRecord(value) && isNonEmptyString(value.data);
+  return isRecord(value) && isNonEmptyString(value.data) && hasValidSimulationOptions(value);
 }
 
 export function isReceiptItem(value: unknown): value is ReceiptItem {
@@ -70,10 +83,30 @@ export function isReceiptPrintPayload(value: unknown): value is ReceiptPrintPayl
     (value.issuedAt === undefined || isNonEmptyString(value.issuedAt)) &&
     (value.qrPayload === undefined || isNonEmptyString(value.qrPayload)) &&
     Array.isArray(value.items) &&
-    value.items.every(isReceiptItem)
+    value.items.every(isReceiptItem) &&
+    hasValidSimulationOptions(value)
   );
 }
 
 export function isReprintRequestBody(value: unknown): value is ReprintRequestBody {
   return isRecord(value) && isNonEmptyString(value.jobId);
+}
+
+export function isSetMockHealthRequestBody(value: unknown): value is SetMockHealthRequestBody {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const validPaper = value.paper === undefined || value.paper === "ok" || value.paper === "out" || value.paper === "near_end";
+  const validCover = value.cover === undefined || value.cover === "closed" || value.cover === "open";
+  const validTemperature =
+    value.temperature === undefined || value.temperature === "normal" || value.temperature === "overheat";
+  const hasAtLeastOneField =
+    value.paper !== undefined || value.cover !== undefined || value.temperature !== undefined;
+
+  return validPaper && validCover && validTemperature && hasAtLeastOneField;
+}
+
+function hasValidSimulationOptions(value: Record<string, unknown>): boolean {
+  return value.simulateError === undefined || isPrinterErrorCode(value.simulateError);
 }

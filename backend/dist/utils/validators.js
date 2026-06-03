@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isConnectionMode = isConnectionMode;
+exports.isPrinterErrorCode = isPrinterErrorCode;
 exports.isRecord = isRecord;
 exports.isNonEmptyString = isNonEmptyString;
 exports.isConnectRequestBody = isConnectRequestBody;
@@ -10,8 +11,17 @@ exports.isQrPrintPayload = isQrPrintPayload;
 exports.isReceiptItem = isReceiptItem;
 exports.isReceiptPrintPayload = isReceiptPrintPayload;
 exports.isReprintRequestBody = isReprintRequestBody;
+exports.isSetMockHealthRequestBody = isSetMockHealthRequestBody;
 function isConnectionMode(value) {
     return value === "usb" || value === "lan";
+}
+function isPrinterErrorCode(value) {
+    return (value === "PAPER_OUT" ||
+        value === "PAPER_JAM" ||
+        value === "COVER_OPEN" ||
+        value === "OVERHEAT" ||
+        value === "COMM_ERROR" ||
+        value === "UNKNOWN_COMMAND");
 }
 function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -23,7 +33,7 @@ function isConnectRequestBody(value) {
     return isRecord(value) && isConnectionMode(value.mode);
 }
 function isTextPrintPayload(value) {
-    return isRecord(value) && isNonEmptyString(value.text);
+    return isRecord(value) && isNonEmptyString(value.text) && hasValidSimulationOptions(value);
 }
 function isImagePrintPayload(value) {
     if (!isRecord(value)) {
@@ -33,10 +43,10 @@ function isImagePrintPayload(value) {
     const hasImageUrl = value.imageUrl === undefined || isNonEmptyString(value.imageUrl);
     const hasFilename = value.filename === undefined || isNonEmptyString(value.filename);
     const hasImageSource = isNonEmptyString(value.imageBase64) || isNonEmptyString(value.imageUrl);
-    return hasImageBase64 && hasImageUrl && hasFilename && hasImageSource;
+    return hasImageBase64 && hasImageUrl && hasFilename && hasImageSource && hasValidSimulationOptions(value);
 }
 function isQrPrintPayload(value) {
-    return isRecord(value) && isNonEmptyString(value.data);
+    return isRecord(value) && isNonEmptyString(value.data) && hasValidSimulationOptions(value);
 }
 function isReceiptItem(value) {
     return (isRecord(value) &&
@@ -56,8 +66,22 @@ function isReceiptPrintPayload(value) {
         (value.issuedAt === undefined || isNonEmptyString(value.issuedAt)) &&
         (value.qrPayload === undefined || isNonEmptyString(value.qrPayload)) &&
         Array.isArray(value.items) &&
-        value.items.every(isReceiptItem));
+        value.items.every(isReceiptItem) &&
+        hasValidSimulationOptions(value));
 }
 function isReprintRequestBody(value) {
     return isRecord(value) && isNonEmptyString(value.jobId);
+}
+function isSetMockHealthRequestBody(value) {
+    if (!isRecord(value)) {
+        return false;
+    }
+    const validPaper = value.paper === undefined || value.paper === "ok" || value.paper === "out" || value.paper === "near_end";
+    const validCover = value.cover === undefined || value.cover === "closed" || value.cover === "open";
+    const validTemperature = value.temperature === undefined || value.temperature === "normal" || value.temperature === "overheat";
+    const hasAtLeastOneField = value.paper !== undefined || value.cover !== undefined || value.temperature !== undefined;
+    return validPaper && validCover && validTemperature && hasAtLeastOneField;
+}
+function hasValidSimulationOptions(value) {
+    return value.simulateError === undefined || isPrinterErrorCode(value.simulateError);
 }
