@@ -202,10 +202,10 @@ export function PrintActionsPanel({
         <div className="ticket-preview-container">
           <div className="ticket-preview-header">
             <span>{uiLanguage === "tr" ? "Dinamik Fiş Önizleme" : "Dynamic Receipt Preview"}</span>
-            <div className="segmented" style={{ marginBottom: 0, padding: "2px", display: "flex", gap: "2px" }}>
+            <div className="segmented" style={{ marginBottom: 0, padding: "2px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px", width: "280px" }}>
               <button
                 className={previewTab === "text" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 8px" }}
+                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
                 type="button"
                 onClick={() => setPreviewTab("text")}
               >
@@ -213,7 +213,7 @@ export function PrintActionsPanel({
               </button>
               <button
                 className={previewTab === "qr" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 8px" }}
+                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
                 type="button"
                 onClick={() => setPreviewTab("qr")}
               >
@@ -221,7 +221,7 @@ export function PrintActionsPanel({
               </button>
               <button
                 className={previewTab === "image" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 8px" }}
+                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
                 type="button"
                 onClick={() => setPreviewTab("image")}
               >
@@ -229,7 +229,7 @@ export function PrintActionsPanel({
               </button>
               <button
                 className={previewTab === "receipt" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 8px" }}
+                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
                 type="button"
                 onClick={() => setPreviewTab("receipt")}
               >

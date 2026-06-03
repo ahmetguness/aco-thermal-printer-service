@@ -1,5 +1,5 @@
 import type { LogEntry } from "../../types/printer";
-import { translateTone } from "./StatusBadge";
+import { translateTone, type BadgeTone } from "./StatusBadge";
 
 interface LogsPanelProps {
   exportUrl: string;
@@ -38,7 +38,7 @@ function LogRow({ log, language }: { log: LogEntry; language: "tr" | "en" }) {
       <span>{formatLogTime(log.ts)}</span>
       <strong>{log.op}</strong>
       <span className={isError ? "log-pill log-pill-error" : "log-pill"}>
-        {translateTone(log.status as any, language)}
+        {translateTone(log.status as BadgeTone, language)}
       </span>
       <span title={log.error?.detail ?? log.message ?? ""}>{log.error?.code ? translateErrorCode(log.error.code, language) : (log.message ?? "-")}</span>
     </div>

@@ -139,92 +139,90 @@ export function DashboardPage() {
       {error ? <div className="banner">{error}</div> : null}
 
       <section className="dashboard-grid-two-col">
-        <div className="dashboard-column">
-          <ConnectionPanel
-            mode={mode}
-            connection={status?.connection ?? null}
-            loadState={loadState}
-            language={uiLanguage}
-            onConnect={() =>
-              void runAction(async () => {
-                const response = await connect(mode);
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-            onModeChange={setMode}
-          />
-          <PrintActionsPanel
-            text={text}
-            qrData={qrData}
-            imageBase64={imageBase64}
-            imageFilename={imageFilename}
-            language={language}
-            uiLanguage={uiLanguage}
-            onTextChange={setText}
-            onQrDataChange={setQrData}
-            onImageBase64Change={setImageBase64}
-            onImageFilenameChange={setImageFilename}
-            onLanguageChange={setLanguage}
-            onPrintText={() =>
-              void runAction(async () => {
-                const response = await printText({ text, language });
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-            onPrintQr={() =>
-              void runAction(async () => {
-                const response = await printQr({ data: qrData });
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-            onPrintImage={() =>
-              void runAction(async () => {
-                const response = await printImage({
-                  imageBase64,
-                  filename: imageFilename,
-                });
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-            onPrintReceipt={() =>
-              void runAction(async () => {
-                const response = await printReceipt(receiptExample(language));
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-          />
-          <MockControlsPanel
-            language={uiLanguage}
-            onPaperOut={() => void runAction(() => setHealth({ paper: "out" }))}
-            onCoverOpen={() => void runAction(() => setHealth({ cover: "open" }))}
-            onOverheat={() => void runAction(() => setHealth({ temperature: "overheat" }))}
-            onResetHealth={() => void runAction(() => setHealth({ paper: "ok", cover: "closed", temperature: "normal" }))}
-            onDisconnect={() =>
-              void runAction(async () => {
-                const response = await simulateDisconnect();
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-          />
-        </div>
+        <ConnectionPanel
+          mode={mode}
+          connection={status?.connection ?? null}
+          loadState={loadState}
+          language={uiLanguage}
+          onConnect={() =>
+            void runAction(async () => {
+              const response = await connect(mode);
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+          onModeChange={setMode}
+        />
+        <StatusPanel status={status} language={uiLanguage} />
 
-        <div className="dashboard-column">
-          <StatusPanel status={status} language={uiLanguage} />
-          <QueuePanel
-            queue={status?.queue ?? null}
-            lastJob={status?.lastJob ?? null}
-            lastFailedJob={lastFailedJob}
-            language={uiLanguage}
-            onReprint={() =>
-              void runAction(async () => {
-                if (!lastFailedJob) return;
-                const response = await reprint(lastFailedJob.id);
-                if (isFailure(response)) throw apiErrorToError(response.error);
-              })
-            }
-          />
-          <LogsPanel exportUrl={logExportUrl} logs={logs} language={uiLanguage} />
-        </div>
+        <PrintActionsPanel
+          text={text}
+          qrData={qrData}
+          imageBase64={imageBase64}
+          imageFilename={imageFilename}
+          language={language}
+          uiLanguage={uiLanguage}
+          onTextChange={setText}
+          onQrDataChange={setQrData}
+          onImageBase64Change={setImageBase64}
+          onImageFilenameChange={setImageFilename}
+          onLanguageChange={setLanguage}
+          onPrintText={() =>
+            void runAction(async () => {
+              const response = await printText({ text, language });
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+          onPrintQr={() =>
+            void runAction(async () => {
+              const response = await printQr({ data: qrData });
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+          onPrintImage={() =>
+            void runAction(async () => {
+              const response = await printImage({
+                imageBase64,
+                filename: imageFilename,
+              });
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+          onPrintReceipt={() =>
+            void runAction(async () => {
+              const response = await printReceipt(receiptExample(language));
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+        />
+
+        <QueuePanel
+          queue={status?.queue ?? null}
+          lastJob={status?.lastJob ?? null}
+          lastFailedJob={lastFailedJob}
+          language={uiLanguage}
+          onReprint={() =>
+            void runAction(async () => {
+              if (!lastFailedJob) return;
+              const response = await reprint(lastFailedJob.id);
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+        />
+        <MockControlsPanel
+          language={uiLanguage}
+          onPaperOut={() => void runAction(() => setHealth({ paper: "out" }))}
+          onCoverOpen={() => void runAction(() => setHealth({ cover: "open" }))}
+          onOverheat={() => void runAction(() => setHealth({ temperature: "overheat" }))}
+          onResetHealth={() => void runAction(() => setHealth({ paper: "ok", cover: "closed", temperature: "normal" }))}
+          onDisconnect={() =>
+            void runAction(async () => {
+              const response = await simulateDisconnect();
+              if (isFailure(response)) throw apiErrorToError(response.error);
+            })
+          }
+        />
+
+        <LogsPanel exportUrl={logExportUrl} logs={logs} language={uiLanguage} />
       </section>
     </main>
   );

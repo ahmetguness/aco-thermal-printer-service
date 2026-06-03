@@ -1,5 +1,5 @@
 import type { PrinterStatus } from "../../types/printer";
-import { StatusBadge, translateTone } from "./StatusBadge";
+import { StatusBadge, translateTone, type BadgeTone } from "./StatusBadge";
 
 interface StatusPanelProps {
   status: PrinterStatus | null;
@@ -59,7 +59,7 @@ export function StatusPanel({ status, language }: StatusPanelProps) {
       } else if (value === "queued" || value === "printing") {
         dotClass += " dot-warning";
         textClass += " text-warning";
-        displayLabel = translateTone(value as any, language);
+        displayLabel = translateTone(value as BadgeTone, language);
       } else {
         dotClass += " dot-danger";
         textClass += " text-danger";
