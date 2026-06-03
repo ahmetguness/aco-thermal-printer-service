@@ -150,14 +150,25 @@ Bonus gereksinimler arasında yer alan tahminleme algoritmalarını mock veriler
 - Basım ETA Tahmini: Kuyrukta bekleyen işlerin sayısına bağlı olarak dinamik bir yazdırma süresi tahmin edilir. Her yazdırma işinin ortalama 1.2 saniye sürdüğü varsayılmıştır.
 - Tüm bu tahminler `/status` api'sinde `predictions` nesnesi altında döner ve frontend arayüzündeki panelde kullanıcıya gösterilir.
 
-## Çoklu Dil ve Kod Sayfası Desteği
+## Çoklu Dil, Yerelleştirme ve Ayrıştırılmış Dil Yönetimi
 
-Yazdırma komutlarının Türkçe karakterleri doğru basabilmesi amacıyla kod sayfası (Code Page) yönetimini ekledim. İsteklerde gönderilen `language` alanına göre yazıcıya gönderilen kod sayfası değişir:
+Arayüz ve yazdırma çıktılarının dil yönetimi kullanıcı deneyimini maksimize etmek için birbirinden **tamamen ayrıştırılmış (decoupled)** olarak tasarlanmıştır:
 
-- `tr` (Türkçe): Türkçe karakter setini destekleyen CP857 kod sayfası atanır.
-- `en` (İngilizce / Varsayılan): CP437 kod sayfası atanır.
+1. **Arayüz Ekran Dili (Global UI Language - TR / EN Toggle):**
+   - Sayfanın sağ üst köşesinde (topbar) bulunan **TR / EN** butonu ile tüm sayfanın dilini (başlıklar, buton etiketleri, sensör durum açıklamaları ve test paneli yardımcı açıklamaları) değiştirebilirsiniz.
+   
+2. **Yazıcı Baskı Dili (Printer Command Language - Türkçe / English):**
+   - Yazdırma panelinin içinde yer alan dil seçici, **yalnızca fiziksel yazıcıya gönderilecek ESC/POS komut setini ve kağıt çıktısının dilini (CP857/CP437)** belirlemek üzere izole edilmiştir.
+   - `tr` seçildiğinde Türkçe karakter setini destekleyen CP857 kod sayfası, `en` seçildiğinde varsayılan CP437 kod sayfası atanır.
 
-ESC/POS Mock builder sınıfı gelen Türkçe karakterleri CP857 standardına uygun byte dizilerine dönüştürme mantığına sahiptir.
+---
+
+## Dinamik Fiş Önizleme Bileşeni (Live Thermal Receipt Preview)
+
+Yazdırma panelinin sağ tarafında, **gerçekçi bir termal kağıt slipi** görünümünde tasarlanmış, tırtıklı kağıt kenar efektli ve monospace yazı tipli dinamik bir **"Live Preview"** alanı bulunmaktadır:
+- **Akıllı Sekme Geçişi:** Metin, QR veya Görsel alanlarında veri girilirken veya alanlara odaklanıldığında, önizleme otomatik olarak ilgili yazdırma tipinin önizlemesine (Text, QR, Image, Receipt) geçiş yapar.
+- **Baskı Dili Senkronizasyonu:** Fiş önizleme içeriğinin dili (Cihaz ID, Tarih, Malzeme Listesi, Toplam Tutar vb.) yerel Yazıcı Baskı Dili seçimine göre gerçek zamanlı güncellenir.
+
 
 ## API Uçları (Endpoint'ler)
 

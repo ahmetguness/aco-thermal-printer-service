@@ -866,3 +866,223 @@ input:focus {
     gap: 10px;
   }
 }
+
+/* --- Clarity & Premium Visual Enhancements --- */
+
+/* Step Badge styling */
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-indigo));
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-right: 8px;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+  flex-shrink: 0;
+}
+
+/* Split Column Layout inside Print Actions Panel */
+.print-actions-split {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .print-actions-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Simulated Thermal Ticket Preview */
+.ticket-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.ticket-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+
+.ticket-preview-header span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.ticket-paper {
+  background: #fbfbf6; /* warm thermal paper */
+  color: #1a1a1a;
+  padding: 20px 16px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), inset 0 0 40px rgba(0, 0, 0, 0.05);
+  position: relative;
+  border-top: 4px dashed #ddd;
+  border-bottom: 6px dashed #ccc;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: all 0.3s ease;
+}
+
+/* Jagged bottom edge simulation using CSS pattern overlay matching body background */
+.ticket-paper::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(-45deg, #0b0f19 3px, transparent 0),
+              linear-gradient(45deg, #0b0f19 3px, transparent 0);
+  background-size: 6px 12px;
+  z-index: 10;
+}
+
+.ticket-content {
+  white-space: pre-wrap;
+  word-break: break-all;
+  flex-grow: 1;
+}
+
+.ticket-header-area {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.ticket-divider {
+  border-top: 1px dashed #666;
+  margin: 10px 0;
+}
+
+.ticket-footer-area {
+  text-align: center;
+  font-size: 0.72rem;
+  margin-top: 12px;
+  color: #555;
+}
+
+/* Simulated QR code graphics */
+.mock-qr-code {
+  background: #fff;
+  border: 4px solid #000;
+  width: 110px;
+  height: 110px;
+  margin: 12px auto;
+  position: relative;
+  padding: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+.mock-qr-pattern {
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(45deg, #000 25%, transparent 25%), 
+    linear-gradient(-45deg, #000 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #000 75%), 
+    linear-gradient(-45deg, transparent 75%, #000 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+}
+
+.mock-qr-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: #000;
+  border: 4px solid #fff;
+}
+.mock-qr-tl { top: 4px; left: 4px; }
+.mock-qr-tr { top: 4px; right: 4px; }
+.mock-qr-bl { bottom: 4px; left: 4px; }
+
+/* Ticket Tables */
+.ticket-receipt-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+}
+
+.ticket-receipt-table th {
+  border-bottom: 1px dashed #1a1a1a;
+  text-align: left;
+  font-weight: bold;
+  font-size: 0.78rem;
+  padding-bottom: 4px;
+}
+
+.ticket-receipt-table td {
+  padding: 3px 0;
+  font-size: 0.78rem;
+}
+
+.ticket-receipt-total {
+  border-top: 1px dashed #1a1a1a;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 6px;
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+/* Button & Stack Helper Text */
+.button-stack-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+
+.button-helper-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  margin-bottom: 12px;
+  padding-left: 4px;
+  line-height: 1.35;
+  transition: color 0.2s ease;
+}
+
+.button-stack-item:hover .button-helper-text {
+  color: var(--text-secondary);
+}
+
+/* Highlighted Simulation Panel (Admin Tooling) */
+.simulation-panel {
+  border-color: rgba(245, 158, 11, 0.15) !important;
+  box-shadow: var(--shadow-premium), 0 0 20px rgba(245, 158, 11, 0.05) !important;
+}
+
+.simulation-panel:hover {
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: var(--shadow-premium), 0 0 25px rgba(245, 158, 11, 0.12) !important;
+}
+
+.simulation-panel .panel-header h2 {
+  color: #fde68a !important; /* warm yellow */
+}
+

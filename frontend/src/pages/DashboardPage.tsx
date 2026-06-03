@@ -42,6 +42,7 @@ const receiptExample = (language: PrintLanguage) => ({
 export function DashboardPage() {
   const [mode, setMode] = useState<ConnectionMode>("usb");
   const [language, setLanguage] = useState<PrintLanguage>("tr");
+  const [uiLanguage, setUiLanguage] = useState<"tr" | "en">("tr");
   const [status, setStatus] = useState<PrinterStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
@@ -107,12 +108,32 @@ export function DashboardPage() {
     <main className="dashboard">
       <header className="topbar">
         <div>
-          <p className="eyebrow">ACO Thermal Printer Service</p>
-          <h1>Printer Control Panel</h1>
+          <p className="eyebrow">{uiLanguage === "tr" ? "ACO Termal Yazıcı Servisi" : "ACO Thermal Printer Service"}</p>
+          <h1>{uiLanguage === "tr" ? "Yazıcı Kontrol Paneli" : "Printer Control Panel"}</h1>
         </div>
-        <button className="ghost-button" type="button" onClick={() => void refresh()}>
-          Refresh
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div className="segmented" style={{ marginBottom: 0, padding: "2px" }}>
+            <button
+              className={uiLanguage === "tr" ? "active" : ""}
+              style={{ minHeight: "32px", padding: "4px 12px", fontSize: "0.8rem" }}
+              type="button"
+              onClick={() => setUiLanguage("tr")}
+            >
+              TR
+            </button>
+            <button
+              className={uiLanguage === "en" ? "active" : ""}
+              style={{ minHeight: "32px", padding: "4px 12px", fontSize: "0.8rem" }}
+              type="button"
+              onClick={() => setUiLanguage("en")}
+            >
+              EN
+            </button>
+          </div>
+          <button className="ghost-button" type="button" onClick={() => void refresh()}>
+            {uiLanguage === "tr" ? "Yenile" : "Refresh"}
+          </button>
+        </div>
       </header>
 
       {error ? <div className="banner">{error}</div> : null}
@@ -123,6 +144,7 @@ export function DashboardPage() {
             mode={mode}
             connection={status?.connection ?? null}
             loadState={loadState}
+            language={uiLanguage}
             onConnect={() =>
               void runAction(async () => {
                 const response = await connect(mode);
@@ -137,6 +159,7 @@ export function DashboardPage() {
             imageBase64={imageBase64}
             imageFilename={imageFilename}
             language={language}
+            uiLanguage={uiLanguage}
             onTextChange={setText}
             onQrDataChange={setQrData}
             onImageBase64Change={setImageBase64}
@@ -171,6 +194,7 @@ export function DashboardPage() {
             }
           />
           <MockControlsPanel
+            language={uiLanguage}
             onPaperOut={() => void runAction(() => setHealth({ paper: "out" }))}
             onCoverOpen={() => void runAction(() => setHealth({ cover: "open" }))}
             onOverheat={() => void runAction(() => setHealth({ temperature: "overheat" }))}
@@ -185,11 +209,12 @@ export function DashboardPage() {
         </div>
 
         <div className="dashboard-column">
-          <StatusPanel status={status} />
+          <StatusPanel status={status} language={uiLanguage} />
           <QueuePanel
             queue={status?.queue ?? null}
             lastJob={status?.lastJob ?? null}
             lastFailedJob={lastFailedJob}
+            language={uiLanguage}
             onReprint={() =>
               void runAction(async () => {
                 if (!lastFailedJob) return;
@@ -198,7 +223,7 @@ export function DashboardPage() {
               })
             }
           />
-          <LogsPanel exportUrl={logExportUrl} logs={logs} />
+          <LogsPanel exportUrl={logExportUrl} logs={logs} language={uiLanguage} />
         </div>
       </section>
     </main>
