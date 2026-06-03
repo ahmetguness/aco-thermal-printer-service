@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: aco-thermal-printer-service
     ports:
-      - "3000:3000"
+      - "3003:3000"
     environment:
       PORT: "3000"
       API_ACCESS_TOKEN: "test-token-1234"
