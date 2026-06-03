@@ -387,6 +387,7 @@ dd {
   color: var(--text-muted);
   font-size: 0.78rem;
   margin-top: 10px;
+  word-break: break-all;
 }
 
 /* Glowing Indicator Dots for hardware state */
@@ -1085,4 +1086,37 @@ input:focus {
 .simulation-panel .panel-header h2 {
   color: #fde68a !important; /* warm yellow */
 }
+
+/* Responsive adjustments for inputs and columns under 600px */
+@media (max-width: 600px) {
+  .action-row-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  .action-row-group > div,
+  .action-row-group > button {
+    width: 100% !important;
+  }
+  
+  /* Inner rows in image-group or connection-controls */
+  .action-row-group .input-col div[style*="display: flex"],
+  .action-row-group div[style*="display: flex"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  
+  .action-row-group .ghost-button,
+  .action-row-group .action-button-main {
+    width: 100% !important;
+  }
+  
+  .connection-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 

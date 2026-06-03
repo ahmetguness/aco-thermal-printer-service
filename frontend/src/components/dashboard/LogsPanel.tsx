@@ -40,7 +40,7 @@ function LogRow({ log, language }: { log: LogEntry; language: "tr" | "en" }) {
       <span className={isError ? "log-pill log-pill-error" : "log-pill"}>
         {translateTone(log.status as any, language)}
       </span>
-      <span>{log.error?.code ? translateErrorCode(log.error.code, language) : (log.message ?? "-")}</span>
+      <span title={log.error?.detail ?? log.message ?? ""}>{log.error?.code ? translateErrorCode(log.error.code, language) : (log.message ?? "-")}</span>
     </div>
   );
 }
