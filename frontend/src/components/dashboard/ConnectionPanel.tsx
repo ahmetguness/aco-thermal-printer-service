@@ -52,7 +52,7 @@ export function ConnectionPanel({
         </div>
       ) : null}
 
-      <dl className="facts">
+      <dl className="facts" style={{ marginTop: "auto" }}>
         <div>
           <dt>{language === "tr" ? "Aktif mod" : "Active mode"}</dt>
           <dd>{connection?.mode?.toUpperCase() ?? "-"}</dd>

@@ -15,6 +15,18 @@ import type {
 
 export const logExportUrl = `${API_BASE_URL}/logs/export`;
 
+export async function exportLogsCsv(): Promise<Blob> {
+  const response = await fetch(logExportUrl, {
+    headers: {
+      Authorization: `Bearer ${API_ACCESS_TOKEN}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error(`Export failed: ${response.status} ${response.statusText}`);
+  }
+  return response.blob();
+}
+
 export function isFailure<TData>(response: ApiResponse<TData>): response is ApiFailure {
   return !response.success;
 }

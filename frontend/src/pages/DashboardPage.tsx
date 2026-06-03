@@ -10,7 +10,6 @@ import {
   getLogs,
   getStatus,
   isFailure,
-  logExportUrl,
   printImage,
   printQr,
   printReceipt,
@@ -166,6 +165,13 @@ export function DashboardPage() {
           onImageBase64Change={setImageBase64}
           onImageFilenameChange={setImageFilename}
           onLanguageChange={setLanguage}
+          isConnected={status?.connection?.state === "connected"}
+          hasError={
+            status?.lastJob?.status === "failed" ||
+            status?.health?.paper === "out" ||
+            status?.health?.cover === "open" ||
+            status?.health?.temperature === "overheat"
+          }
           onPrintText={() =>
             void runAction(async () => {
               const response = await printText({ text, language });
@@ -222,7 +228,7 @@ export function DashboardPage() {
           }
         />
 
-        <LogsPanel exportUrl={logExportUrl} logs={logs} language={uiLanguage} />
+        <LogsPanel logs={logs} language={uiLanguage} />
       </section>
     </main>
   );

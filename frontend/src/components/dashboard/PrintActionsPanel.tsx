@@ -17,6 +17,8 @@ interface PrintActionsPanelProps {
   onPrintText: () => void;
   onQrDataChange: (value: string) => void;
   onTextChange: (value: string) => void;
+  isConnected: boolean;
+  hasError: boolean;
 }
 
 export function PrintActionsPanel({
@@ -35,6 +37,8 @@ export function PrintActionsPanel({
   onPrintText,
   onQrDataChange,
   onTextChange,
+  isConnected,
+  hasError,
 }: PrintActionsPanelProps) {
   const [previewTab, setPreviewTab] = useState<"text" | "qr" | "image" | "receipt">("text");
 
@@ -201,7 +205,17 @@ export function PrintActionsPanel({
         {/* Right Side: Live Thermal Receipt Preview */}
         <div className="ticket-preview-container">
           <div className="ticket-preview-header">
-            <span>{uiLanguage === "tr" ? "Dinamik Fiş Önizleme" : "Dynamic Receipt Preview"}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              {uiLanguage === "tr" ? "Dinamik Fiş Önizleme" : "Dynamic Receipt Preview"}
+              <span
+                className={`status-led ${isConnected && !hasError ? "led-online" : "led-offline"}`}
+                title={
+                  isConnected
+                    ? (hasError ? (uiLanguage === "tr" ? "Yazıcı Hatası" : "Printer Warning") : (uiLanguage === "tr" ? "Yazıcı Çevrimiçi" : "Printer Online"))
+                    : (uiLanguage === "tr" ? "Yazıcı Çevrimdışı" : "Printer Offline")
+                }
+              />
+            </span>
             <div className="segmented" style={{ marginBottom: 0, padding: "2px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px", width: "280px" }}>
               <button
                 className={previewTab === "text" ? "active" : ""}

@@ -5,6 +5,17 @@ const node_crypto_1 = require("node:crypto");
 class JobQueueService {
     jobs = new Map();
     createJob(type, payload, conn) {
+        const idempotencyKey = payload.idempotencyKey;
+        if (idempotencyKey) {
+            const existing = Array.from(this.jobs.values()).find((j) => j.payload &&
+                typeof j.payload === "object" &&
+                "idempotencyKey" in j.payload &&
+                j.payload.idempotencyKey === idempotencyKey &&
+                j.status !== "failed");
+            if (existing) {
+                return existing;
+            }
+        }
         const now = new Date().toISOString();
         const job = {
             id: (0, node_crypto_1.randomUUID)(),

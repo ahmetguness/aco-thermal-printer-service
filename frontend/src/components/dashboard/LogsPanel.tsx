@@ -1,18 +1,36 @@
 import type { LogEntry } from "../../types/printer";
 import { translateTone, type BadgeTone } from "./StatusBadge";
+import { exportLogsCsv } from "../../lib/api";
 
 interface LogsPanelProps {
-  exportUrl: string;
   logs: LogEntry[];
   language: "tr" | "en";
 }
 
-export function LogsPanel({ exportUrl, logs, language }: LogsPanelProps) {
+export function LogsPanel({ logs, language }: LogsPanelProps) {
+  const handleExport = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    try {
+      const blob = await exportLogsCsv();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "logs.csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(language === "tr" ? "Günlükler dışa aktarılamadı." : "Failed to export logs.");
+    }
+  };
+
   return (
     <section className="panel full">
       <div className="panel-header">
         <h2>{language === "tr" ? "Sistem Günlükleri (Logs)" : "System Logs"}</h2>
-        <a className="link-button" href={exportUrl}>
+        <a className="link-button" href="#" onClick={handleExport}>
           {language === "tr" ? "CSV Dışa Aktar" : "Export CSV"}
         </a>
       </div>

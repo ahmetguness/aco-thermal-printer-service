@@ -8,6 +8,7 @@ services:
       - "3000:3000"
     environment:
       PORT: "3000"
+      API_ACCESS_TOKEN: "test-token-1234"
     volumes:
       - backend-storage:/app/storage
     restart: unless-stopped

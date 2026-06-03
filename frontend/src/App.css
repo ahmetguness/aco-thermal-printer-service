@@ -102,7 +102,7 @@ body::after {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .dashboard-column {
@@ -474,20 +474,56 @@ dd {
   height: 100%;
   border-radius: 99px;
   transition: width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: progress-bar-stripes 1.2s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+  from { background-position: 1rem 0, 0 0; }
+  to { background-position: 0 0, 0 0; }
 }
 
 .progress-fill-success {
-  background: linear-gradient(90deg, #10b981, #059669);
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.12) 75%,
+    transparent 75%,
+    transparent
+  ), linear-gradient(90deg, #10b981, #059669);
+  background-size: 1rem 1rem, auto;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
 }
 
 .progress-fill-warning {
-  background: linear-gradient(90deg, #f59e0b, #d97706);
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.12) 75%,
+    transparent 75%,
+    transparent
+  ), linear-gradient(90deg, #f59e0b, #d97706);
+  background-size: 1rem 1rem, auto;
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
 }
 
 .progress-fill-danger {
-  background: linear-gradient(90deg, #f43f5e, #e11d48);
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.12) 75%,
+    transparent 75%,
+    transparent
+  ), linear-gradient(90deg, #f43f5e, #e11d48);
+  background-size: 1rem 1rem, auto;
   box-shadow: 0 0 8px rgba(244, 63, 94, 0.3);
 }
 
@@ -1120,5 +1156,38 @@ input:focus {
     align-items: stretch;
   }
 }
+
+/* Hardware LED Indicator Styles */
+.status-led {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.status-led.led-online {
+  background-color: var(--neon-emerald);
+  box-shadow: 0 0 8px var(--neon-emerald), 0 0 16px var(--neon-emerald);
+}
+
+.status-led.led-offline {
+  background-color: var(--neon-rose);
+  box-shadow: 0 0 8px var(--neon-rose), 0 0 16px var(--neon-rose);
+  animation: led-blink 1s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes led-blink {
+  0% {
+    opacity: 0.35;
+    box-shadow: 0 0 2px var(--neon-rose);
+  }
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--neon-rose), 0 0 20px var(--neon-rose);
+  }
+}
+
 
 

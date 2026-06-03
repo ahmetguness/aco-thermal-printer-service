@@ -12,9 +12,13 @@ class LoggerService {
         this.logFilePath = logFilePath;
     }
     async append(entry) {
+        const errorDetails = entry.error
+            ? { code: entry.error.code, detail: entry.error.detail }
+            : undefined;
         const logEntry = {
             ts: new Date().toISOString(),
             ...entry,
+            error: errorDetails,
         };
         const logs = await this.getAll();
         logs.push(logEntry);

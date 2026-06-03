@@ -33,7 +33,7 @@ export function QueuePanel({ lastFailedJob, lastJob, queue, language, onReprint 
       <button className="reprint-btn" type="button" disabled={!lastFailedJob} onClick={onReprint}>
         {language === "tr" ? "Tekrar Bastır" : "Reprint Failed"}
       </button>
-      <p className="hint">{reprintHint}</p>
+      <p className="hint" style={{ marginTop: "auto" }}>{reprintHint}</p>
     </section>
   );
 }
