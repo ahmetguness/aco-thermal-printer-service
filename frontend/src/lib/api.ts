@@ -1,5 +1,5 @@
-import { API_BASE_URL } from "../config/env";
-import type { ApiResponse } from "../types/api";
+import { API_BASE_URL, API_ACCESS_TOKEN } from "../config/env";
+import type { ApiFailure, ApiResponse } from "../types/api";
 import type {
   ConnectionInfo,
   ConnectionMode,
@@ -14,6 +14,10 @@ import type {
 } from "../types/printer";
 
 export const logExportUrl = `${API_BASE_URL}/logs/export`;
+
+export function isFailure<TData>(response: ApiResponse<TData>): response is ApiFailure {
+  return !response.success;
+}
 
 export function connect(mode: ConnectionMode): Promise<ApiResponse<ConnectionInfo>> {
   return postJson<ConnectionInfo, { mode: ConnectionMode }>("/connect", { mode });
@@ -56,7 +60,11 @@ export function simulateDisconnect(): Promise<ApiResponse<ConnectionInfo>> {
 }
 
 async function getJson<TData>(path: string): Promise<ApiResponse<TData>> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      Authorization: `Bearer ${API_ACCESS_TOKEN}`,
+    },
+  });
   return parseApiResponse<TData>(response);
 }
 
@@ -68,6 +76,7 @@ async function postJson<TData, TBody extends object>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${API_ACCESS_TOKEN}`,
     },
     body: JSON.stringify(body),
   });

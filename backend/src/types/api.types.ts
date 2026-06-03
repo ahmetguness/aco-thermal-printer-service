@@ -3,7 +3,8 @@ export type ApiErrorCode =
   | "NOT_FOUND"
   | "VALIDATION_ERROR"
   | "PRINTER_ERROR"
-  | "INTERNAL_ERROR";
+  | "INTERNAL_ERROR"
+  | "UNAUTHORIZED";
 
 export interface ApiError {
   code: ApiErrorCode;

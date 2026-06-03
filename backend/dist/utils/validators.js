@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isConnectionMode = isConnectionMode;
 exports.isPrinterErrorCode = isPrinterErrorCode;
+exports.isPrintLanguage = isPrintLanguage;
 exports.isRecord = isRecord;
 exports.isNonEmptyString = isNonEmptyString;
 exports.isConnectRequestBody = isConnectRequestBody;
@@ -23,6 +24,9 @@ function isPrinterErrorCode(value) {
         value === "COMM_ERROR" ||
         value === "UNKNOWN_COMMAND");
 }
+function isPrintLanguage(value) {
+    return value === "tr" || value === "en";
+}
 function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -33,7 +37,10 @@ function isConnectRequestBody(value) {
     return isRecord(value) && isConnectionMode(value.mode);
 }
 function isTextPrintPayload(value) {
-    return isRecord(value) && isNonEmptyString(value.text) && hasValidSimulationOptions(value);
+    return (isRecord(value) &&
+        isNonEmptyString(value.text) &&
+        (value.language === undefined || isPrintLanguage(value.language)) &&
+        hasValidSimulationOptions(value));
 }
 function isImagePrintPayload(value) {
     if (!isRecord(value)) {
@@ -65,6 +72,7 @@ function isReceiptPrintPayload(value) {
         (value.currency === undefined || isNonEmptyString(value.currency)) &&
         (value.issuedAt === undefined || isNonEmptyString(value.issuedAt)) &&
         (value.qrPayload === undefined || isNonEmptyString(value.qrPayload)) &&
+        (value.language === undefined || isPrintLanguage(value.language)) &&
         Array.isArray(value.items) &&
         value.items.every(isReceiptItem) &&
         hasValidSimulationOptions(value));

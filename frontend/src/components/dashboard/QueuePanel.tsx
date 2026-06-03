@@ -29,7 +29,7 @@ export function QueuePanel({ lastFailedJob, lastJob, queue, onReprint }: QueuePa
           <dd>{queue?.failed ?? 0}</dd>
         </div>
       </dl>
-      <button type="button" disabled={!lastFailedJob} onClick={onReprint}>
+      <button className="reprint-btn" type="button" disabled={!lastFailedJob} onClick={onReprint}>
         Tekrar Bastır
       </button>
       <p className="hint">{reprintHint}</p>

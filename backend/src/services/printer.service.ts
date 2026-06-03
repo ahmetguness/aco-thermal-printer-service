@@ -29,6 +29,7 @@ const REPRINTABLE_JOB_STATUS = "failed";
 export class MockPrinterService {
   private readonly escposBuilder = new EscposBuilder();
   private readonly failedImageDir = path.resolve(process.cwd(), "storage", "failed-images");
+  private paperConsumedMm = 0;
   private connection: ConnectionInfo = {
     mode: null,
     state: "disconnected",
@@ -97,15 +98,38 @@ export class MockPrinterService {
   }
 
   getStatus(): PrinterStatus {
+    const health = this.adapter.getHealth();
+    
+    let remainingRollPercentage = Math.max(0, 100 - (this.paperConsumedMm / 50000) * 100);
+    if (health.paper === "out") {
+      remainingRollPercentage = 0;
+    } else if (health.paper === "near_end") {
+      remainingRollPercentage = Math.min(10, remainingRollPercentage);
+    }
+    
+    const remainingRollMeters = parseFloat(((50000 * (remainingRollPercentage / 100)) / 1000).toFixed(2));
+    
+    const queueSummary = this.jobQueue.getSummary();
+    const pendingJobsCount = queueSummary.queued + queueSummary.printing;
+    const printEtaSeconds = parseFloat((pendingJobsCount * 1.2).toFixed(1));
+
     return {
       connection: this.connection,
-      health: this.adapter.getHealth(),
+      health,
       lastJob: this.jobQueue.getLastJob(),
-      queue: this.jobQueue.getSummary(),
+      queue: queueSummary,
+      predictions: {
+        remainingRollPercentage: parseFloat(remainingRollPercentage.toFixed(1)),
+        remainingRollMeters,
+        printEtaSeconds,
+      },
     };
   }
 
   setHealth(health: Parameters<MockPrinterAdapter["setHealth"]>[0]): ReturnType<MockPrinterAdapter["setHealth"]> {
+    if (health.paper === "ok") {
+      this.paperConsumedMm = 0; // reset paper consumption on reload/paper change simulation
+    }
     return this.adapter.setHealth(health);
   }
 
@@ -120,6 +144,11 @@ export class MockPrinterService {
     payload: PrintablePayload,
   ): Promise<PrintJob<PrintablePayload>> {
     const job = this.jobQueue.createJob(type, payload, this.connection.mode);
+
+    if (job.status !== "queued") {
+      return job;
+    }
+
     const error = this.getBlockingError(payload);
 
     if (error) {
@@ -149,6 +178,18 @@ export class MockPrinterService {
     }
 
     const successJob = this.jobQueue.updateJobStatus(job.id, "success");
+
+    // Consume paper
+    if (type === "text") this.paperConsumedMm += 12;
+    else if (type === "image") this.paperConsumedMm += 75;
+    else if (type === "qr") this.paperConsumedMm += 45;
+    else if (type === "receipt") this.paperConsumedMm += 110;
+
+    if (this.paperConsumedMm >= 50000) {
+      this.adapter.setHealth({ paper: "out" });
+    } else if (this.paperConsumedMm >= 45000) {
+      this.adapter.setHealth({ paper: "near_end" });
+    }
 
     await this.logJob(successJob, undefined, commandPayload);
 

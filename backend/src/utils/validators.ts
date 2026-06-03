@@ -1,6 +1,7 @@
 import type {
   ConnectionMode,
   ImagePrintPayload,
+  PrintLanguage,
   PrinterErrorCode,
   QrPrintPayload,
   ReceiptItem,
@@ -28,6 +29,10 @@ export function isPrinterErrorCode(value: unknown): value is PrinterErrorCode {
   );
 }
 
+export function isPrintLanguage(value: unknown): value is PrintLanguage {
+  return value === "tr" || value === "en";
+}
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -41,7 +46,12 @@ export function isConnectRequestBody(value: unknown): value is ConnectRequestBod
 }
 
 export function isTextPrintPayload(value: unknown): value is TextPrintPayload {
-  return isRecord(value) && isNonEmptyString(value.text) && hasValidSimulationOptions(value);
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.text) &&
+    (value.language === undefined || isPrintLanguage(value.language)) &&
+    hasValidSimulationOptions(value)
+  );
 }
 
 export function isImagePrintPayload(value: unknown): value is ImagePrintPayload {
@@ -82,6 +92,7 @@ export function isReceiptPrintPayload(value: unknown): value is ReceiptPrintPayl
     (value.currency === undefined || isNonEmptyString(value.currency)) &&
     (value.issuedAt === undefined || isNonEmptyString(value.issuedAt)) &&
     (value.qrPayload === undefined || isNonEmptyString(value.qrPayload)) &&
+    (value.language === undefined || isPrintLanguage(value.language)) &&
     Array.isArray(value.items) &&
     value.items.every(isReceiptItem) &&
     hasValidSimulationOptions(value)

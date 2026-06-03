@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { printerController } from "../controllers/printer.controller";
+import { authMiddleware } from "../middleware/auth.middleware";
 
 export const printerRouter = Router();
+
+printerRouter.use(authMiddleware);
 
 printerRouter.post("/connect", printerController.connect);
 printerRouter.get("/status", printerController.status);

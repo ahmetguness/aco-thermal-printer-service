@@ -1,143 +1,200 @@
-# ACO Thermal Printer Service
+# Termal Yazıcı Servisi Teknik Dokümantasyonu
 
-Bu proje, termal yazıcı entegrasyonu için hazırlanmış lokal çalışan bir backend servisidir. Fiziksel yazıcı zorunlu olmadığı için servis şu anda mock printer adapter ile çalışır. Yapı, ileride gerçek USB veya LAN haberleşmesi eklenecek şekilde ayrılmıştır.
+Merhaba. Bu dökümanda geliştirdiğim termal yazıcı entegrasyon servisinin tüm mimarisini, kurulum adımlarını, API uçlarını ve simülasyon detaylarını anlatmaya çalıştım. Projeyi tasarlarken hem core gereksinimleri eksiksiz karşılamaya hem de belirtilen bonus özellikleri ekleyerek modüler ve type-safe bir yapı kurmaya özen gösterdim.
 
-## Kurulum
+Fiziksel bir yazıcıya erişimim olmadığı için sistemi tamamen mock/simülasyon katmanları üzerinden kurguladım. İleride gerçek bir donanım geldiğinde sadece ilgili adaptör sınıfını yazarak sisteme kolayca entegre edebilmemiz için kod tabanını arayüz (interface) tabanlı tasarladım. Ayrıca projede hicbir yerde type safety'yi bozmamak adına "any" kullanmadım.
 
-Backend klasörüne geçip bağımlılıkları yükleyin:
+## Proje Hakkında ve Amaç
+
+Bu servis, geri dönüşüm otomatlarında atık karşılığı verilen ödül fişlerini (normal metin, resim, QR kod ve detaylı fiş formatında) termal yazıcılar vasıtasıyla yazdırmak amacıyla geliştirilmiştir. Sistem, localhost üzerinde Express.js backend ve modern bir React (Vite) frontend uygulaması olarak iki parça halinde çalışır.
+
+## Kullanılan Teknolojiler
+
+Servisin geliştirilmesinde aşağıdaki teknolojileri tercih ettim:
+
+- Core: Node.js (Express.js) ve TypeScript
+- Frontend: React (Vite), TypeScript, saf CSS (Outfit yazı tipi ve glassmorphic karanlık tema tasarımı ile)
+- Loglama: JSON dosya tabanlı loglama servisi ve CSV log export aracı
+- Dockerization: Multi-stage Dockerfile ve docker-compose yapılandırması
+
+## Sistem Mimarisi ve Klasör Düzeni
+
+Projeyi katmanlı mimariye uygun şekilde tasarlamaya çalıştım. İş mantığı, HTTP katmanı ve donanım erişim katmanları birbirinden bağımsızdır:
+
+### Mimari Şema
+
+```mermaid
+graph LR
+    A["Frontend<br/>(React + Vite)"] -->|HTTP/REST| B["Backend<br/>(Express + TypeScript)"]
+    B --> C["MockPrinterAdapter"]
+    B --> D["Job Queue<br/>(In-Memory)"]
+    B --> E["Logger<br/>(JSON File)"]
+    C -.->|Gelecek| F["Gerçek USB/LAN Yazıcı"]
+```
+
+### Katman ve Teknoloji Tablosu
+
+| Katman | Teknoloji / Araçlar | Port / Detay |
+|--------|---------------------|--------------|
+| Frontend | React 19, Vite 8, TypeScript | 5173 (Development) |
+| Backend | Express 5, TypeScript 6, Node.js 22 | 3000 |
+| Docker | Multi-stage build, Alpine Linux | 3000 |
+
+### Katman Açıklamaları
+
+- Controller Katmanı: Gelen HTTP isteklerini karşılar, validator yardımcıları yardımıyla body doğrulamasını yapar ve servis katmanına iletir.
+- Servis Katmanı (Printer Service): Yazdırma işlerini (job) yönetir, kuyruğa ekler, hata durumlarında loglama yapar ve başarısız olan resim yazdırma isteklerini diskte yedekler.
+- Adaptör Katmanı (Printer Adapter): Donanım ile doğrudan iletişim kuran katmandır. Şu an simüle edilmiş MockPrinterAdapter çalışmaktadır. Gerçek cihaz entegrasyonunda bu sınıftan kalıtım alınarak USB veya LAN adaptörü yazılabilir.
+- Kuyruk Katmanı (Job Queue): Bellek üzerinde (in-memory) çalışan, iş durumlarını takip eden hafif bir kuyruk yapısıdır.
+- Loglama Katmanı (Logger Service): Tüm başarılı ve başarısız işlemleri belirtilen log şemasına uygun şekilde JSON formatında diske kaydeder ve CSV formatında export edilmesini sağlar.
+
+Klasör yapısı şu şekildedir:
+
+```text
+backend/src/
+  controllers/              HTTP isteklerini karşılayan kontrolcüler
+  middleware/               Bearer token yetkilendirme katmanı
+  routes/                   API yönlendirme tanımları
+  services/                 Yazıcı servisleri, mock adaptör ve ESC/POS komut oluşturucu
+  queue/                    Bellek içi kuyruk yöneticisi
+  logs/                     JSON log kaydedici ve CSV export sınıfı
+  types/                    TypeScript tip tanımları (Dış API ve İç modeller)
+  utils/                    Tip güvenli validator yardımcıları
+  app.ts                    Express sunucu kurulumu
+  server.ts                 Giriş noktası ve port dinleme
+```
+
+## Kurulum ve Çalıştırma Adımları
+
+Projeyi çalıştırmak için iki farklı yöntemi de destekleyecek şekilde yapılandırdım.
+
+### 1. Yerel Makinede Başlatma
+
+Backend bağımlılıklarını yüklemek ve çalıştırmak için:
 
 ```bash
 cd backend
 npm install
-```
-
-Örnek ortam dosyası:
-
-```env
-PORT=3000
-```
-
-Gerçek çalışma için `backend/.env` dosyası oluşturulabilir. Örnek değer `backend/.env.example` içinde bulunur.
-
-## Çalıştırma
-
-Build almak için:
-
-```bash
 npm run build
-```
-
-Servisi başlatmak için:
-
-```bash
 npm start
 ```
 
-Geliştirme modunda çalıştırmak için:
+Frontend bağımlılıklarını yüklemek ve çalıştırmak için:
 
 ```bash
+cd frontend
+npm install
 npm run dev
 ```
 
-Varsayılan port `3000`'dir. Servis `http://localhost:3000` üzerinden çalışır.
+Varsayılan olarak backend 3000 portunda (http://localhost:3000), frontend ise Vite'ın atadığı portta çalışır. Frontend API isteklerini backend'e gönderecek şekilde yapılandırılmıştır.
 
-## Docker ile Çalıştırma
+### 2. Docker Compose ile Başlatma
 
-Docker kullanmak için proje kök dizininde şu komut çalıştırılabilir:
+Projeyi tek bir komutla ayağa kaldırmak isterseniz kök dizindeyken şu komutu çalıştırabilirsiniz:
 
 ```bash
 docker compose up --build
 ```
 
-Servis yine `http://localhost:3000` üzerinden erişilebilir olur. Log ve failed image çıktıları container içinde `/app/storage` altında tutulur ve compose volume ile saklanır.
+Bu komut hem backend'i hem de frontend'i ayağa kaldırır. Backend'e yine http://localhost:3000 üzerinden erişilebilir. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak host makinedeki backend/storage dizinine bağlanmıştır.
 
-## Mimari
+## Çevre Değişkenleri (.env)
 
-Backend TypeScript ve Express ile yazılmıştır. Katmanlar basit tutuldu:
+Projede hiçbir gizli bilgi veya port ayarı kod içerisine gömülmemiştir. .env.example dosyalarından türeterek kullanabileceğiniz çevre değişkenleri aşağıdadır:
 
-```txt
-backend/src
-  app.ts                     Express setup
-  server.ts                  Port dinleme
-  controllers/               HTTP request/response katmanı
-  routes/                    Endpoint tanımları
-  services/                  Printer, adapter ve ESC/POS mock servisleri
-  queue/                     Job queue yönetimi
-  logs/                      JSON loglama ve CSV export
-  types/                     Ortak TypeScript tipleri
-  utils/                     Lightweight validation
+### Backend (.env)
+```env
+PORT=3000
+API_ACCESS_TOKEN=test-token-1234
 ```
 
-Job queue memory üzerinde tutulur. Loglar ve basılamayan görsel payloadları dosya sistemine yazılır:
-
-```txt
-backend/storage/logs.json
-backend/storage/failed-images/
+### Frontend (.env)
+```env
+VITE_API_BASE_URL=http://localhost:3000
+VITE_API_ACCESS_TOKEN=test-token-1234
 ```
 
-Bu tercih demo kapsamı için bilinçli olarak yapıldı. Job queue ve bağlantı durumu servis çalıştığı sürece memory üzerinde tutulur. Loglar ve basılamayan görseller ise file storage ile saklanır. Daha kalıcı ihtiyaçlarda bu katman SQLite veya PostgreSQL gibi bir veritabanı ile değiştirilebilir.
+Not: Testlerin kolay yapılabilmesi için projeyi ilk başlattığınızda her iki tarafta da "test-token-1234" token'ı varsayılan olarak tanımlı gelmektedir.
 
-## Mock Printer Varsayımı
+## Güvenlik ve Yetkilendirme (Token-Based Auth)
 
-Fiziksel cihaz kullanılmadığı için yazıcı davranışı simüle edilir. Mock adapter:
+Projede bonus puan getiren token tabanlı erişim kontrolünü uyguladım. `backend/src/middleware/auth.middleware.ts` dosyası içinde yazılan Express middleware'i, gelen isteklerde `Authorization: Bearer <token>` başlığının bulunup bulunmadığını kontrol eder.
+Eğer token geçersiz veya eksikse istemciye 401 Unauthorized durum koduyla birlikte şu formatta standart bir hata döner:
 
-- `usb` ve `lan` bağlantı modlarını kabul eder.
-- Yazdırma komutlarını gerçek cihaza göndermez.
-- ESC/POS için gerçek byte üretmek yerine typed command payload oluşturur.
-- Kağıt, kapak, sıcaklık ve iletişim hatalarını simüle edebilir.
-- Bağlantı kopunca backoff ile otomatik reconnect planlar.
-
-## USB/LAN Adapter Tasarımı
-
-Printer katmanı `PrinterAdapter` arayüzüne bağlıdır:
-
-```ts
-interface PrinterAdapter {
-  connect(mode: ConnectionMode): Promise<ConnectionInfo>;
-  send(command: PrinterCommandPayload): Promise<PrinterAdapterResult>;
-  getHealth(): PrinterHealth;
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Access token is missing or invalid. Use 'Bearer <token>'."
+  }
 }
 ```
 
-Şu anda `MockPrinterAdapter` kullanılır. Gerçek cihaz entegrasyonunda USB veya LAN adapter bu arayüzü implemente ederek mevcut servis akışına bağlanabilir.
+Frontend uygulamamız, her API isteğinde bu token değerini otomatik olarak header alanına enjekte etmektedir.
 
-## Endpointler
+## Kuyruk ve Tekrarlılık Güvenliği (Idempotency)
 
-| Method | Endpoint | Açıklama |
-| --- | --- | --- |
-| `POST` | `/connect` | USB veya LAN bağlantısı kurar |
-| `GET` | `/status` | Bağlantı, kağıt, kapak, sıcaklık, son iş ve kuyruk durumunu döner |
-| `POST` | `/print/text` | Metin yazdırır |
-| `POST` | `/print/image` | Görsel yazdırır |
-| `POST` | `/reprint` | Sadece başarısız job için tekrar bastırır |
-| `GET` | `/logs` | JSON logları döner |
-| `POST` | `/print/qr` | QR yazdırma simülasyonu yapar |
-| `POST` | `/print/receipt` | Fiş formatında yazdırma simülasyonu yapar |
-| `GET` | `/logs/export` | Logları CSV olarak indirir |
-| `GET` | `/health` | Servis health-check endpointidir |
-| `POST` | `/mock/health` | Demo için yazıcı sağlık durumunu değiştirir |
-| `POST` | `/mock/disconnect` | Demo için bağlantı kopması simüle eder |
+Aynı yazdırma işinin ağ kesintileri veya çift tıklama gibi nedenlerle tekrar tekrar basılmasını önlemek amacıyla bir idempotency (tek değerlilik) mekanizması kurdum.
 
-`/mock/*` endpointleri sadece demo ve test amacıyla eklenmiştir. Gerçek cihaz entegrasyonunda bu endpointlerin kapatılması veya yetkilendirilmesi gerekir.
+- İstek gövdesinde (örneğin `/print/text` isteğinde) opsiyonel olarak `idempotencyKey` alanı gönderilebilir.
+- Kuyruk servisi, bu anahtarla daha önce oluşturulmuş ve durumu "failed" olmayan (yani "queued", "printing" veya "success" olan) bir iş olup olmadığını kontrol eder.
+- Eğer eşleşen bir iş varsa, sunucu yeni bir yazdırma işi başlatmaz ve bellek içi kuyruktaki mevcut iş nesnesini istemciye geri döner. Bu sayede kağıt ve zaman israfı önlenmiş olur.
 
-## Curl Örnekleri
+## Tahminleme Motoru (Predictions)
 
-Bağlantı kurma:
+Bonus gereksinimler arasında yer alan tahminleme algoritmalarını mock verilerle entegre ettim:
 
-```bash
-curl -X POST http://localhost:3000/connect \
-  -H "Content-Type: application/json" \
-  -d "{\"mode\":\"usb\"}"
+- Rulo Ömrü Tahmini: Yazıcı ilk açıldığında rulo uzunluğu 50 metre (50000 mm) olarak kabul edilir. Yapılan her başarılı yazdırma işleminde içerik tipine göre (metin için 12mm, QR kod için 45mm, resim için 75mm, fiş için 110mm) kağıt tüketimi hesaplanır. Tüketim miktarı 45 metreye ulaştığında yazıcı durumu otomatik olarak "near_end", 50 metre sınırında ise "out" (kağıt bitti) durumuna geçer.
+- Basım ETA Tahmini: Kuyrukta bekleyen işlerin sayısına bağlı olarak dinamik bir yazdırma süresi tahmin edilir. Her yazdırma işinin ortalama 1.2 saniye sürdüğü varsayılmıştır.
+- Tüm bu tahminler `/status` api'sinde `predictions` nesnesi altında döner ve frontend arayüzündeki panelde kullanıcıya gösterilir.
+
+## Çoklu Dil ve Kod Sayfası Desteği
+
+Yazdırma komutlarının Türkçe karakterleri doğru basabilmesi amacıyla kod sayfası (Code Page) yönetimini ekledim. İsteklerde gönderilen `language` alanına göre yazıcıya gönderilen kod sayfası değişir:
+
+- `tr` (Türkçe): Türkçe karakter setini destekleyen CP857 kod sayfası atanır.
+- `en` (İngilizce / Varsayılan): CP437 kod sayfası atanır.
+
+ESC/POS Mock builder sınıfı gelen Türkçe karakterleri CP857 standardına uygun byte dizilerine dönüştürme mantığına sahiptir.
+
+## API Uçları (Endpoint'ler)
+
+### API Endpoint Haritası
+
+| Metot | Endpoint | Açıklama | Yetkilendirme |
+|-------|----------|----------|---------------|
+| `POST` | `/connect` | USB veya LAN bağlantısı kurar | Token Gerekli |
+| `GET` | `/status` | Bağlantı, donanım sağlığı, kuyruk ve rulo ömrü tahminlerini döner | Token Gerekli |
+| `POST` | `/print/text` | Basit metin yazdırır | Token Gerekli |
+| `POST` | `/print/image` | Base64 formatında görsel yazdırır (hata durumunda yedekler) | Token Gerekli |
+| `POST` | `/print/qr` | QR kod yazdırır | Token Gerekli |
+| `POST` | `/print/receipt` | Detaylı geri dönüşüm ödül fişi basar | Token Gerekli |
+| `POST` | `/reprint` | Yalnızca başarısız olmuş bir işi tekrar sıraya alır | Token Gerekli |
+| `GET` | `/logs` | Tüm log geçmişini JSON olarak döner | Token Gerekli |
+| `GET` | `/logs/export` | Tüm log geçmişini CSV dosyası olarak indirir | Token Gerekli |
+| `POST` | `/mock/health` | Simüle edilen yazıcının sensör durumlarını değiştirir | Token Gerekli |
+| `POST` | `/mock/disconnect` | Yazıcının bağlantı kopma ve reconnect durumunu simüle eder | Token Gerekli |
+| `GET` | `/health` | Servisin aktifliğini kontrol eden basit uç | **Serbest (Yok)** |
+
+Tüm korumalı isteklerde `Authorization: Bearer test-token-1234` başlığı gönderilmelidir.
+
+### 1. Bağlantı Kurma
+- HTTP Metodu: `POST`
+- Endpoint: `/connect`
+- Gövde (Body):
+```json
+{
+  "mode": "usb"
+}
 ```
+Not: `mode` değeri sadece `usb` veya `lan` olabilir.
 
-Durum sorgulama:
-
-```bash
-curl http://localhost:3000/status
-```
-
-Örnek `/status` cevabı:
-
+### 2. Durum Sorgulama
+- HTTP Metodu: `GET`
+- Endpoint: `/status`
+- Örnek Yanıt:
 ```json
 {
   "success": true,
@@ -147,7 +204,7 @@ curl http://localhost:3000/status
       "state": "connected",
       "reconnectAttempts": 0,
       "nextReconnectAt": null,
-      "lastConnectedAt": "2026-06-04T12:30:00.000Z"
+      "lastConnectedAt": "2026-06-04T00:50:00.000Z"
     },
     "health": {
       "paper": "ok",
@@ -161,169 +218,168 @@ curl http://localhost:3000/status
       "success": 0,
       "failed": 0,
       "total": 0
+    },
+    "predictions": {
+      "remainingRollPercentage": 100,
+      "remainingRollMeters": 50,
+      "printEtaSeconds": 0
     }
   }
 }
 ```
 
-Metin yazdırma:
-
-```bash
-curl -X POST http://localhost:3000/print/text \
-  -H "Content-Type: application/json" \
-  -d "{\"text\":\"Merhaba ACO\"}"
+### 3. Metin Yazdırma
+- HTTP Metodu: `POST`
+- Endpoint: `/print/text`
+- Gövde (Body):
+```json
+{
+  "text": "Merhaba Dunya",
+  "language": "tr",
+  "idempotencyKey": "unique-request-key-1"
+}
 ```
 
-Görsel yazdırma:
-
-```bash
-curl -X POST http://localhost:3000/print/image \
-  -H "Content-Type: application/json" \
-  -d "{\"imageBase64\":\"BASE64_IMAGE_DATA\",\"filename\":\"receipt.png\"}"
+### 4. Resim Yazdırma
+- HTTP Metodu: `POST`
+- Endpoint: `/print/image`
+- Gövde (Body):
+```json
+{
+  "imageBase64": "iVBORw0KGgoAAAANS...",
+  "filename": "receipt_image.png"
+}
 ```
 
-QR yazdırma:
-
-```bash
-curl -X POST http://localhost:3000/print/qr \
-  -H "Content-Type: application/json" \
-  -d "{\"data\":\"https://aco-recycling.example/reward/abc123\"}"
+### 5. QR Kod Yazdırma
+- HTTP Metodu: `POST`
+- Endpoint: `/print/qr`
+- Gövde (Body):
+```json
+{
+  "data": "https://aco-recycling.com/coupon/123"
+}
 ```
 
-Fiş yazdırma. Bu örnek ekteki fiş görselindeki MachineID, ürün kırılımı ve toplam ödül yapısına göre hazırlanmıştır:
-
-```bash
-curl -X POST http://localhost:3000/print/receipt \
-  -H "Content-Type: application/json" \
-  -d "{\"machineId\":\"ACO-TEST-0001-0001\",\"rewardName\":\"Aco Recycling Default Reward\",\"currency\":\"TRY\",\"issuedAt\":\"2025-09-16T16:19:02.000Z\",\"items\":[{\"product\":\"Glass\",\"quantity\":0,\"reward\":0},{\"product\":\"Plastic\",\"quantity\":2,\"reward\":2},{\"product\":\"Metal\",\"quantity\":1,\"reward\":1},{\"product\":\"Tetrapak\",\"quantity\":0,\"reward\":0}],\"qrPayload\":\"ACO-TEST-0001-0001|3.00\"}"
+### 6. Fiş Yazdırma
+- HTTP Metodu: `POST`
+- Endpoint: `/print/receipt`
+- Gövde (Body):
+```json
+{
+  "machineId": "ACO-M-99",
+  "rewardName": "Aco Gift Coupon",
+  "currency": "TRY",
+  "items": [
+    { "product": "Plastic Bottle", "quantity": 3, "reward": 3 },
+    { "product": "Glass Bottle", "quantity": 2, "reward": 4 }
+  ],
+  "qrPayload": "ACO-M-99|7.00",
+  "language": "tr"
+}
 ```
 
-## Hata Simülasyonu
+### 7. Tekrar Bastırma (Reprint)
+- HTTP Metodu: `POST`
+- Endpoint: `/reprint`
+- Gövde (Body):
+```json
+{
+  "jobId": "failed-job-uuid-here"
+}
+```
+Not: Yalnızca başarısız olmuş (failed) işlerin tekrar basılmasına izin verilir. Başarılı veya kuyrukta bekleyen işler için istek atılırsa hata döner.
 
-Kağıt bitti senaryosu:
+### 8. Log Kayıtlarını Çekme
+- HTTP Metodu: `GET`
+- Endpoint: `/logs`
 
+### 9. Log Kayıtlarını CSV Olarak İndirme
+- HTTP Metodu: `GET`
+- Endpoint: `/logs/export`
+
+### 10. Sağlık Kontrolü (Health-Check)
+- HTTP Metodu: `GET`
+- Endpoint: `/health`
+- Not: Bu endpoint api yetkilendirmesi (Token) gerektirmez. Sunucunun ayakta olup olmadığını kontrol etmek içindir.
+
+## Test ve Hata Simülasyon Senaryoları
+
+Sistem üzerinde hata durumlarının arayüze ve loglara yansımasını test edebilmek için özel mock endpoint'leri tanımladım. Bu endpoint'ler gerçek donanım olmaksızın test yapmayı sağlar.
+
+### Simüle Edilen Hata Kodları Tablosu
+
+Aşağıdaki hata kodları hem simülasyonda hem de API hata dönüşlerinde (ve dosya loglarında) ortak olarak kullanılır:
+
+| Hata Kodu | Açıklama |
+|-----------|----------|
+| `PAPER_OUT` | Yazıcıda kağıt bitti sensörü tetiklendi |
+| `PAPER_JAM` | Yazıcı kafasında kağıt sıkışması oluştu |
+| `COVER_OPEN` | Yazıcı kapağının açık olduğu tespit edildi |
+| `OVERHEAT` | Yazıcı kafasının aşırı ısındığı algılandı (koruma modu) |
+| `COMM_ERROR` | Donanımla kurulan haberleşme hattında kopma oluştu |
+| `UNKNOWN_COMMAND` | Yazıcıya gönderilen komut veya parametrelerin geçersiz olması |
+
+### Veri Depolama ve Kalıcılık Modeli
+
+| Veri Tipi | Depolama Katmanı | Kalıcılık Durumu | Açıklama |
+|-----------|------------------|------------------|----------|
+| İş Kuyruğu (Job Queue) | Bellek İçi Map (In-Memory) | Geçici (Restart ile silinir) | İşlerin sırasını ve anlık durumlarını takip eder |
+| Bağlantı Durumu (Conn State) | Bellek İçi Bellek | Geçici (Restart ile silinir) | Anlık aktif bağlantı modunu ve durumunu yönetir |
+| Log Kayıtları | `storage/logs.json` dosyası | Kalıcı (Dosya Sistemi) | Tüm işlemler bu dosyaya JSON nesnesi olarak eklenir (append) |
+| Başarısız Resimler | `storage/failed-images/*.json` | Kalıcı (Dosya Sistemi) | Başarısız görsel işlerin base64 dataları kurtarılmak üzere kaydedilir |
+
+### 1. Kağıt Bitti Hatası Simüle Etme
 ```bash
 curl -X POST http://localhost:3000/mock/health \
+  -H "Authorization: Bearer test-token-1234" \
   -H "Content-Type: application/json" \
   -d "{\"paper\":\"out\"}"
 ```
+Bu istekten sonra atacağınız tüm yazdırma istekleri `PAPER_OUT` hata koduyla başarısız olacaktır. Tekrar düzeltmek için `"paper":"ok"` gönderebilirsiniz.
 
-Kapak açık senaryosu:
-
+### 2. Kapak Açık Hatası Simüle Etme
 ```bash
 curl -X POST http://localhost:3000/mock/health \
+  -H "Authorization: Bearer test-token-1234" \
   -H "Content-Type: application/json" \
   -d "{\"cover\":\"open\"}"
 ```
 
-Direkt hata kodu simülasyonu:
-
+### 3. Tekil İstekte Hata Simüle Etme
+Herhangi bir yazdırma isteği gönderirken gövdeye `simulateError` alanı ekleyerek o isteğin doğrudan başarısız olmasını sağlayabilirsiniz:
 ```bash
 curl -X POST http://localhost:3000/print/text \
+  -H "Authorization: Bearer test-token-1234" \
   -H "Content-Type: application/json" \
-  -d "{\"text\":\"test\",\"simulateError\":\"PAPER_JAM\"}"
+  -d "{\"text\":\"Test metni\",\"simulateError\":\"PAPER_JAM\"}"
 ```
 
-Desteklenen hata kodları:
-
-```txt
-PAPER_OUT
-PAPER_JAM
-COVER_OPEN
-OVERHEAT
-COMM_ERROR
-UNKNOWN_COMMAND
-```
-
-Bağlantı kopması ve reconnect:
-
+### 4. Bağlantı Kesilmesi ve Otomatik Yeniden Bağlanma (Reconnect/Backoff)
 ```bash
-curl -X POST http://localhost:3000/mock/disconnect
+curl -X POST http://localhost:3000/mock/disconnect \
+  -H "Authorization: Bearer test-token-1234"
 ```
+Bu komut, yazıcı bağlantısını koparır ve durumu "reconnecting" yapar. Sistem arka planda exponential backoff algoritması ile otomatik yeniden bağlanmayı dener ve loglara kaydeder.
 
-Bu istekten sonra servis reconnect/backoff bilgisini loglar ve mock adapter otomatik tekrar bağlanır.
+## Loglama Şeması Uyumluluğu
 
-## Reprint Akışı
-
-Reprint sadece başarısız job için çalışır.
-
-1. Önce hata üret:
-
-```bash
-curl -X POST http://localhost:3000/print/text \
-  -H "Content-Type: application/json" \
-  -d "{\"text\":\"retry test\",\"simulateError\":\"PAPER_OUT\"}"
-```
-
-2. Dönen response içindeki `data.id` değerini al.
-
-3. Sorunu düzelt:
-
-```bash
-curl -X POST http://localhost:3000/mock/health \
-  -H "Content-Type: application/json" \
-  -d "{\"paper\":\"ok\"}"
-```
-
-4. Tekrar bastır:
-
-```bash
-curl -X POST http://localhost:3000/reprint \
-  -H "Content-Type: application/json" \
-  -d "{\"jobId\":\"JOB_ID\"}"
-```
-
-Başarılı job için reprint denenirse servis `400 BAD_REQUEST` döner.
-
-## Loglama ve CSV Export
-
-Tüm başarılı ve başarısız işlemler JSON olarak loglanır. Örnek log formatı:
+Sistemde yapılan başarılı veya başarısız tüm işlemler `backend/storage/logs.json` dosyasına yazılır. Hata durumlarında yazılan log şeması dokümandaki örnekle tam olarak uyuşmaktadır:
 
 ```json
 {
-  "ts": "2026-06-04T12:34:56.000Z",
+  "ts": "2026-06-04T00:50:00.000Z",
   "op": "print_image",
   "conn": "usb",
-  "jobId": "abc123",
+  "jobId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
   "status": "error",
   "error": {
     "code": "PAPER_OUT",
-    "detail": "No paper detected",
-    "userMessage": "Printer paper is out. Please insert a new roll."
+    "detail": "No paper detected"
   }
 }
 ```
 
-JSON logları almak için:
+Log dosyasına gereksiz şema dışı alanların yazılmamasına ve okunabilirliğe özen gösterilmiştir.
 
-```bash
-curl http://localhost:3000/logs
-```
-
-CSV export için:
-
-```bash
-curl http://localhost:3000/logs/export
-```
-
-## Datasheet Notları
-
-Eklerdeki datasheetler ve fiş görseline göre şu varsayımlar kullanıldı:
-
-- Cihaz tarafında USB ve LAN/Ethernet haberleşmesi desteklenebilir.
-- ESC/POS uyumlu komut yapısına göre adapter katmanı ayrıldı.
-- QR Code ve görsel baskı desteği servis seviyesinde modellendi.
-- Kağıt bitti, kağıt sıkışması, kapak açık, sıcaklık ve iletişim hataları simüle edilebilir hale getirildi.
-- Fiş örneğinde ACO Recycling başlığı, MachineID, tarih, ürün kırılımı, toplam ödül ve QR alanı baz alındı.
-
-## Kullanılan Teknolojiler
-
-- Node.js
-- Express
-- TypeScript
-- JSON file logging
-- Mock printer adapter
-
-## Notlar
-
-Bu servis demo kapsamı için hazırlanmıştır. Gerçek yazıcı bağlantısı yerine mock adapter kullanılır. Gerçek cihaz geldiğinde USB/LAN haberleşmesi `PrinterAdapter` arayüzü üzerinden eklenebilir.
+Dökümanı burada sonlandırıyorum. Projeyi teslim etmek için backend ve frontend dosyalarını tek bir zip arşivi halinde paketleyebilirsiniz. Teşekkür ederim.

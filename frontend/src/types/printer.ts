@@ -1,5 +1,7 @@
 export type ConnectionMode = "usb" | "lan";
 
+export type PrintLanguage = "tr" | "en";
+
 export type ConnectionState =
   | "disconnected"
   | "connecting"
@@ -32,6 +34,7 @@ export interface PrinterHealth {
 
 export interface SimulationOptions {
   simulateError?: PrinterErrorCode;
+  idempotencyKey?: string;
 }
 
 export interface ConnectionInfo {
@@ -62,11 +65,18 @@ export interface PrintJob<TPayload = unknown> {
   error?: PrinterError;
 }
 
+export interface PrinterPredictions {
+  remainingRollPercentage: number;
+  remainingRollMeters: number;
+  printEtaSeconds: number;
+}
+
 export interface PrinterStatus {
   connection: ConnectionInfo;
   health: PrinterHealth;
   lastJob: PrintJob | null;
   queue: QueueSummary;
+  predictions: PrinterPredictions;
 }
 
 export interface LogEntry {
@@ -82,7 +92,7 @@ export interface LogEntry {
 
 export interface TextPrintRequest extends SimulationOptions {
   text: string;
-  language?: "tr" | "en" | string;
+  language?: PrintLanguage;
 }
 
 export interface ImagePrintRequest extends SimulationOptions {
@@ -108,6 +118,7 @@ export interface ReceiptPrintRequest extends SimulationOptions {
   issuedAt?: string;
   items: ReceiptItem[];
   qrPayload?: string;
+  language?: PrintLanguage;
 }
 
 export type PrintablePayload =

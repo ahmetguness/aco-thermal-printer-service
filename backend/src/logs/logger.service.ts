@@ -9,7 +9,10 @@ export interface LogEntry {
   jobId?: string;
   status: PrintJobStatus | "ok" | "error";
   message?: string;
-  error?: Pick<PrinterError, "code" | "detail" | "userMessage">;
+  error?: {
+    code: string;
+    detail: string;
+  };
   meta?: Record<string, unknown>;
 }
 
@@ -20,10 +23,15 @@ export class LoggerService {
     this.logFilePath = logFilePath;
   }
 
-  async append(entry: Omit<LogEntry, "ts">): Promise<LogEntry> {
+  async append(entry: Omit<LogEntry, "ts" | "error"> & { error?: { code: string; detail: string; userMessage?: string } }): Promise<LogEntry> {
+    const errorDetails = entry.error
+      ? { code: entry.error.code, detail: entry.error.detail }
+      : undefined;
+
     const logEntry: LogEntry = {
       ts: new Date().toISOString(),
       ...entry,
+      error: errorDetails,
     };
 
     const logs = await this.getAll();

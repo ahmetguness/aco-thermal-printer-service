@@ -25,17 +25,19 @@ export function ConnectionPanel({
         <StatusBadge label={connection?.state ?? loadState} />
       </div>
 
-      <div className="segmented">
-        <button className={mode === "usb" ? "active" : ""} type="button" onClick={() => onModeChange("usb")}>
-          USB
-        </button>
-        <button className={mode === "lan" ? "active" : ""} type="button" onClick={() => onModeChange("lan")}>
-          LAN
+      <div className="connection-controls">
+        <div className="segmented">
+          <button className={mode === "usb" ? "active" : ""} type="button" onClick={() => onModeChange("usb")}>
+            USB
+          </button>
+          <button className={mode === "lan" ? "active" : ""} type="button" onClick={() => onModeChange("lan")}>
+            LAN
+          </button>
+        </div>
+        <button className="primary-button connect-btn" type="button" onClick={onConnect}>
+          Connect
         </button>
       </div>
-      <button className="primary-button" type="button" onClick={onConnect}>
-        Connect
-      </button>
 
       {hasReconnectInfo ? (
         <div className="reconnect-note">

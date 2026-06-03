@@ -17,6 +17,20 @@ export class JobQueueService {
     payload: PrintablePayload,
     conn: ConnectionMode | null,
   ): PrintJob<PrintablePayload> {
+    const idempotencyKey = (payload as any).idempotencyKey;
+    if (idempotencyKey) {
+      const existing = Array.from(this.jobs.values()).find(
+        (j) =>
+          j.payload &&
+          typeof j.payload === "object" &&
+          "idempotencyKey" in j.payload &&
+          (j.payload as any).idempotencyKey === idempotencyKey &&
+          j.status !== "failed"
+      );
+      if (existing) {
+        return existing;
+      }
+    }
     const now = new Date().toISOString();
     const job: PrintJob<PrintablePayload> = {
       id: randomUUID(),

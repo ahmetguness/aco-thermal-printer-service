@@ -9,6 +9,7 @@ import {
   connect,
   getLogs,
   getStatus,
+  isFailure,
   logExportUrl,
   printImage,
   printQr,
@@ -19,11 +20,11 @@ import {
   simulateDisconnect,
 } from "../lib/api";
 import type { ApiError } from "../types/api";
-import type { ConnectionMode, LogEntry, PrinterStatus } from "../types/printer";
+import type { ConnectionMode, LogEntry, PrintLanguage, PrinterStatus } from "../types/printer";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
 
-const receiptExample = {
+const receiptExample = (language: PrintLanguage) => ({
   machineId: "ACO-TEST-0001-0001",
   rewardName: "Aco Recycling Default Reward",
   currency: "TRY",
@@ -35,10 +36,12 @@ const receiptExample = {
     { product: "Tetrapak", quantity: 0, reward: 0 },
   ],
   qrPayload: "ACO-TEST-0001-0001|3.00",
-};
+  language,
+});
 
 export function DashboardPage() {
   const [mode, setMode] = useState<ConnectionMode>("usb");
+  const [language, setLanguage] = useState<PrintLanguage>("tr");
   const [status, setStatus] = useState<PrinterStatus | null>(null);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loadState, setLoadState] = useState<LoadState>("idle");
@@ -63,11 +66,11 @@ export function DashboardPage() {
         getLogs(),
       ]);
 
-      if (!statusResponse.success) {
+      if (isFailure(statusResponse)) {
         throw apiErrorToError(statusResponse.error);
       }
 
-      if (!logsResponse.success) {
+      if (isFailure(logsResponse)) {
         throw apiErrorToError(logsResponse.error);
       }
 
@@ -114,8 +117,8 @@ export function DashboardPage() {
 
       {error ? <div className="banner">{error}</div> : null}
 
-      <section className="dashboard-grid">
-        <div className="top-grid">
+      <section className="dashboard-grid-two-col">
+        <div className="dashboard-column">
           <ConnectionPanel
             mode={mode}
             connection={status?.connection ?? null}
@@ -123,34 +126,32 @@ export function DashboardPage() {
             onConnect={() =>
               void runAction(async () => {
                 const response = await connect(mode);
-                if (!response.success) throw apiErrorToError(response.error);
+                if (isFailure(response)) throw apiErrorToError(response.error);
               })
             }
             onModeChange={setMode}
           />
-          <StatusPanel status={status} />
-        </div>
-
-        <div className="middle-grid">
           <PrintActionsPanel
             text={text}
             qrData={qrData}
             imageBase64={imageBase64}
             imageFilename={imageFilename}
+            language={language}
             onTextChange={setText}
             onQrDataChange={setQrData}
             onImageBase64Change={setImageBase64}
             onImageFilenameChange={setImageFilename}
+            onLanguageChange={setLanguage}
             onPrintText={() =>
               void runAction(async () => {
-                const response = await printText({ text, language: "tr" });
-                if (!response.success) throw apiErrorToError(response.error);
+                const response = await printText({ text, language });
+                if (isFailure(response)) throw apiErrorToError(response.error);
               })
             }
             onPrintQr={() =>
               void runAction(async () => {
                 const response = await printQr({ data: qrData });
-                if (!response.success) throw apiErrorToError(response.error);
+                if (isFailure(response)) throw apiErrorToError(response.error);
               })
             }
             onPrintImage={() =>
@@ -159,28 +160,13 @@ export function DashboardPage() {
                   imageBase64,
                   filename: imageFilename,
                 });
-                if (!response.success) throw apiErrorToError(response.error);
+                if (isFailure(response)) throw apiErrorToError(response.error);
               })
             }
             onPrintReceipt={() =>
               void runAction(async () => {
-                const response = await printReceipt(receiptExample);
-                if (!response.success) throw apiErrorToError(response.error);
-              })
-            }
-          />
-        </div>
-
-        <div className="bottom-grid">
-          <QueuePanel
-            queue={status?.queue ?? null}
-            lastJob={status?.lastJob ?? null}
-            lastFailedJob={lastFailedJob}
-            onReprint={() =>
-              void runAction(async () => {
-                if (!lastFailedJob) return;
-                const response = await reprint(lastFailedJob.id);
-                if (!response.success) throw apiErrorToError(response.error);
+                const response = await printReceipt(receiptExample(language));
+                if (isFailure(response)) throw apiErrorToError(response.error);
               })
             }
           />
@@ -192,7 +178,23 @@ export function DashboardPage() {
             onDisconnect={() =>
               void runAction(async () => {
                 const response = await simulateDisconnect();
-                if (!response.success) throw apiErrorToError(response.error);
+                if (isFailure(response)) throw apiErrorToError(response.error);
+              })
+            }
+          />
+        </div>
+
+        <div className="dashboard-column">
+          <StatusPanel status={status} />
+          <QueuePanel
+            queue={status?.queue ?? null}
+            lastJob={status?.lastJob ?? null}
+            lastFailedJob={lastFailedJob}
+            onReprint={() =>
+              void runAction(async () => {
+                if (!lastFailedJob) return;
+                const response = await reprint(lastFailedJob.id);
+                if (isFailure(response)) throw apiErrorToError(response.error);
               })
             }
           />
@@ -205,7 +207,7 @@ export function DashboardPage() {
 
 async function setHealth(body: Parameters<typeof setMockHealth>[0]): Promise<void> {
   const response = await setMockHealth(body);
-  if (!response.success) throw apiErrorToError(response.error);
+  if (isFailure(response)) throw apiErrorToError(response.error);
 }
 
 function apiErrorToError(error: ApiError): Error {
