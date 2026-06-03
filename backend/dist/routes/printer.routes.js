@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.printerRouter = void 0;
+const express_1 = require("express");
+const printer_controller_1 = require("../controllers/printer.controller");
+exports.printerRouter = (0, express_1.Router)();
+exports.printerRouter.post("/connect", printer_controller_1.printerController.connect);
+exports.printerRouter.get("/status", printer_controller_1.printerController.status);
+exports.printerRouter.post("/print/text", printer_controller_1.printerController.printText);
+exports.printerRouter.post("/print/image", printer_controller_1.printerController.printImage);
+exports.printerRouter.post("/print/qr", printer_controller_1.printerController.printQr);
+exports.printerRouter.post("/print/receipt", printer_controller_1.printerController.printReceipt);
+exports.printerRouter.post("/reprint", printer_controller_1.printerController.reprint);
+exports.printerRouter.get("/logs", printer_controller_1.printerController.logs);
+exports.printerRouter.get("/logs/export", printer_controller_1.printerController.logsExport);
