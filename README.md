@@ -31,7 +31,6 @@ graph LR
     B --> C["MockPrinterAdapter"]
     B --> D["Job Queue<br/>(In-Memory)"]
     B --> E["Logger<br/>(JSON File)"]
-    C -.->|Gelecek| F["Gerçek USB/LAN Yazıcı"]
 ```
 
 ### Katman ve Teknoloji Tablosu
@@ -46,7 +45,7 @@ graph LR
 
 - Controller Katmanı: Gelen HTTP isteklerini karşılar, validator yardımcıları yardımıyla body doğrulamasını yapar ve servis katmanına iletir.
 - Servis Katmanı (Printer Service): Yazdırma işlerini (job) yönetir, kuyruğa ekler, hata durumlarında loglama yapar ve başarısız olan resim yazdırma isteklerini diskte yedekler.
-- Adaptör Katmanı (Printer Adapter): Donanım ile doğrudan iletişim kuran katmandır. Şu an simüle edilmiş MockPrinterAdapter çalışmaktadır. Gerçek cihaz entegrasyonunda bu sınıftan kalıtım alınarak USB veya LAN adaptörü yazılabilir.
+- Adaptör Katmanı (Printer Adapter): Donanım ile doğrudan iletişim kuran katmandır. `backend/src/adapters/printer.adapter.ts` içindeki kontrat sayesinde servis katmanı yazıcının USB veya LAN implementasyonu olduğunu bilmeden aynı arayüzle çalışır. Şu an fiziksel cihaz zorunlu olmadığı için ayrı `MockUsbPrinterAdapter` ve `MockLanPrinterAdapter` implementasyonları kullanılmaktadır.
 - Kuyruk Katmanı (Job Queue): Bellek üzerinde (in-memory) çalışan, iş durumlarını takip eden hafif bir kuyruk yapısıdır.
 - Loglama Katmanı (Logger Service): Tüm başarılı ve başarısız işlemleri belirtilen log şemasına uygun şekilde JSON formatında diske kaydeder ve CSV formatında export edilmesini sağlar.
 
@@ -54,10 +53,11 @@ Klasör yapısı şu şekildedir:
 
 ```text
 backend/src/
+  adapters/                 Yazıcı adapter kontratı, mock USB ve mock LAN implementasyonları
   controllers/              HTTP isteklerini karşılayan kontrolcüler
   middleware/               Bearer token yetkilendirme katmanı
   routes/                   API yönlendirme tanımları
-  services/                 Yazıcı servisleri, mock adaptör ve ESC/POS komut oluşturucu
+  services/                 Yazıcı iş mantığı ve ESC/POS komut oluşturucu
   queue/                    Bellek içi kuyruk yöneticisi
   logs/                     JSON log kaydedici ve CSV export sınıfı
   types/                    TypeScript tip tanımları (Dış API ve İç modeller)

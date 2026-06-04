@@ -1,0 +1,16 @@
+[
+  {
+    "ts": "2026-06-04T06:09:09.572Z",
+    "op": "connect",
+    "conn": "usb",
+    "status": "ok",
+    "message": "Connected through USB mock adapter"
+  },
+  {
+    "ts": "2026-06-04T06:09:09.574Z",
+    "op": "connect",
+    "conn": "lan",
+    "status": "ok",
+    "message": "Connected through LAN mock adapter"
+  }
+]

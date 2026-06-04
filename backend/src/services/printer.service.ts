@@ -1,9 +1,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { mockPrinterAdapterRegistry, type MockPrinterAdapterRegistry } from "../adapters/mock-printer-adapter.registry";
+import type { MockPrinterAdapter } from "../adapters/mock-printer.adapter";
 import { loggerService } from "../logs/logger.service";
 import { jobQueueService, type JobQueueService } from "../queue/job-queue.service";
 import { EscposBuilder } from "./escpos.builder";
-import { mockPrinterAdapter, type MockPrinterAdapter } from "./mock-printer.adapter";
 import type {
   ConnectionInfo,
   ConnectionMode,
@@ -29,6 +30,7 @@ const REPRINTABLE_JOB_STATUS = "failed";
 export class MockPrinterService {
   private readonly escposBuilder = new EscposBuilder();
   private readonly failedImageDir = path.resolve(process.cwd(), "storage", "failed-images");
+  private activeAdapter: MockPrinterAdapter;
   private paperConsumedMm = 0;
   private connection: ConnectionInfo = {
     mode: null,
@@ -40,11 +42,14 @@ export class MockPrinterService {
 
   constructor(
     private readonly jobQueue: JobQueueService = jobQueueService,
-    private readonly adapter: MockPrinterAdapter = mockPrinterAdapter,
-  ) {}
+    private readonly adapterRegistry: MockPrinterAdapterRegistry = mockPrinterAdapterRegistry,
+  ) {
+    this.activeAdapter = this.adapterRegistry.get("usb");
+  }
 
   async connect(mode: ConnectionMode): Promise<ConnectionInfo> {
-    this.connection = await this.adapter.connect(mode);
+    this.activeAdapter = this.adapterRegistry.get(mode);
+    this.connection = await this.activeAdapter.connect();
 
     await loggerService.append({
       op: "connect",
@@ -98,7 +103,7 @@ export class MockPrinterService {
   }
 
   getStatus(): PrinterStatus {
-    const health = this.adapter.getHealth();
+    const health = this.activeAdapter.getHealth();
     
     let remainingRollPercentage = Math.max(0, 100 - (this.paperConsumedMm / 50000) * 100);
     if (health.paper === "out") {
@@ -130,7 +135,7 @@ export class MockPrinterService {
     if (health.paper === "ok") {
       this.paperConsumedMm = 0; // reset paper consumption on reload/paper change simulation
     }
-    return this.adapter.setHealth(health);
+    return this.activeAdapter.setHealth(health);
   }
 
   async simulateDisconnect(): Promise<ConnectionInfo> {
@@ -164,7 +169,7 @@ export class MockPrinterService {
 
     this.jobQueue.updateJobStatus(job.id, "printing");
     const commandPayload = this.buildCommandPayload(type, payload);
-    const adapterResult = await this.adapter.send(commandPayload);
+    const adapterResult = await this.activeAdapter.send(commandPayload);
 
     if (!adapterResult.success) {
       if (adapterResult.error.code === "COMM_ERROR") {
@@ -186,9 +191,9 @@ export class MockPrinterService {
     else if (type === "receipt") this.paperConsumedMm += 110;
 
     if (this.paperConsumedMm >= 50000) {
-      this.adapter.setHealth({ paper: "out" });
+      this.activeAdapter.setHealth({ paper: "out" });
     } else if (this.paperConsumedMm >= 45000) {
-      this.adapter.setHealth({ paper: "near_end" });
+      this.activeAdapter.setHealth({ paper: "near_end" });
     }
 
     await this.logJob(successJob, undefined, commandPayload);
@@ -222,7 +227,7 @@ export class MockPrinterService {
       return this.createError("COMM_ERROR");
     }
 
-    const health = this.adapter.getHealth();
+    const health = this.activeAdapter.getHealth();
 
     if (health.paper === "out") {
       return this.createError("PAPER_OUT");
@@ -278,7 +283,7 @@ export class MockPrinterService {
 
   private async scheduleAutoReconnect(): Promise<void> {
     const previousMode = this.connection.mode;
-    const schedule = this.adapter.scheduleReconnect();
+    const schedule = this.activeAdapter.scheduleReconnect();
     this.connection = schedule.connection;
 
     await loggerService.append({
@@ -303,7 +308,8 @@ export class MockPrinterService {
   }
 
   private async completeReconnect(mode: ConnectionMode): Promise<void> {
-    this.connection = await this.adapter.connect(mode);
+    this.activeAdapter = this.adapterRegistry.get(mode);
+    this.connection = await this.activeAdapter.connect();
 
     await loggerService.append({
       op: "reconnect_success",

@@ -125,26 +125,3 @@ export interface PrinterCommandPayload {
   codePage: string;
   previewText?: string;
 }
-
-export type PrinterAdapterResult =
-  | {
-      success: true;
-      message: string;
-      command: PrinterCommandPayload;
-    }
-  | {
-      success: false;
-      error: PrinterError;
-      command: PrinterCommandPayload;
-    };
-
-export interface PrinterAdapter {
-  connect(mode: ConnectionMode): Promise<ConnectionInfo>;
-  send(command: PrinterCommandPayload): Promise<PrinterAdapterResult>;
-  getHealth(): PrinterHealth;
-}
-
-export interface ReconnectSchedule {
-  connection: ConnectionInfo;
-  delayMs: number;
-}
