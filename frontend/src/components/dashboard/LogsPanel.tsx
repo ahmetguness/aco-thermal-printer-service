@@ -1,5 +1,4 @@
 import type { LogEntry } from "../../types/printer";
-import { translateTone, type BadgeTone } from "./StatusBadge";
 import { exportLogsCsv } from "../../lib/api";
 
 interface LogsPanelProps {
@@ -48,19 +47,51 @@ export function LogsPanel({ logs, language }: LogsPanelProps) {
 }
 
 function LogRow({ log, language }: { log: LogEntry; language: "tr" | "en" }) {
-  const isError = log.status === "error" || log.status === "failed" || Boolean(log.error);
+  const status = getStrictLogStatus(log, language);
+  const isError = status.tone === "error";
   const rowClassName = isError ? "log-row log-row-error" : "log-row";
 
   return (
     <div className={rowClassName}>
       <span>{formatLogTime(log.ts)}</span>
       <strong>{log.op}</strong>
-      <span className={isError ? "log-pill log-pill-error" : "log-pill"}>
-        {translateTone(log.status as BadgeTone, language)}
+      <span className={`log-pill log-pill-${status.tone}`}>
+        {status.label}
       </span>
       <span title={log.error?.detail ?? log.message ?? ""}>{log.error?.code ? translateErrorCode(log.error.code, language) : (log.message ?? "-")}</span>
     </div>
   );
+}
+
+function getStrictLogStatus(log: LogEntry, language: "tr" | "en"): { label: string; tone: "success" | "warning" | "error" } {
+  if (log.error || log.status === "error") {
+    return {
+      label: language === "tr" ? "HATA" : "ERROR",
+      tone: "error",
+    };
+  }
+
+  if (log.status === "failed") {
+    return {
+      label: language === "tr" ? "BAŞARISIZ" : "FAILED",
+      tone: "error",
+    };
+  }
+
+  if (log.status === "queued" || log.status === "printing") {
+    return {
+      label:
+        log.status === "queued"
+          ? (language === "tr" ? "KUYRUKTA" : "QUEUED")
+          : (language === "tr" ? "YAZDIRILIYOR" : "PRINTING"),
+      tone: "warning",
+    };
+  }
+
+  return {
+    label: language === "tr" ? "BAŞARILI" : "SUCCESS",
+    tone: "success",
+  };
 }
 
 function formatLogTime(value: string): string {
@@ -78,6 +109,7 @@ function translateErrorCode(code: string, language: "tr" | "en"): string {
     COVER_OPEN: { tr: "KAPAK AÇIK", en: "COVER OPEN" },
     OVERHEAT: { tr: "AŞIRI ISINMA", en: "OVERHEAT" },
     COMM_ERROR: { tr: "İLETİŞİM HATASI", en: "COMMUNICATION ERROR" },
+    UNKNOWN_COMMAND: { tr: "BİLİNMEYEN KOMUT", en: "UNKNOWN COMMAND" },
   };
   return codes[code]?.[language] ?? code;
 }

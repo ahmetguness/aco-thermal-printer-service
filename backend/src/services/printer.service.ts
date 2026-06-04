@@ -32,6 +32,7 @@ export class MockPrinterService {
   private readonly failedImageDir = path.resolve(process.cwd(), "storage", "failed-images");
   private activeAdapter: BaseMockPrinterAdapter;
   private paperConsumedMm = 0;
+  private reconnectTimeoutId: NodeJS.Timeout | null = null;
   private connection: ConnectionInfo = {
     mode: null,
     state: "disconnected",
@@ -104,16 +105,16 @@ export class MockPrinterService {
 
   getStatus(): PrinterStatus {
     const health = this.activeAdapter.getHealth();
-    
+
     let remainingRollPercentage = Math.max(0, 100 - (this.paperConsumedMm / 50000) * 100);
     if (health.paper === "out") {
       remainingRollPercentage = 0;
     } else if (health.paper === "near_end") {
       remainingRollPercentage = Math.min(10, remainingRollPercentage);
     }
-    
+
     const remainingRollMeters = parseFloat(((50000 * (remainingRollPercentage / 100)) / 1000).toFixed(2));
-    
+
     const queueSummary = this.jobQueue.getSummary();
     const pendingJobsCount = queueSummary.queued + queueSummary.printing;
     const printEtaSeconds = parseFloat((pendingJobsCount * 1.2).toFixed(1));
@@ -282,6 +283,11 @@ export class MockPrinterService {
   }
 
   private async scheduleAutoReconnect(): Promise<void> {
+    // If a reconnect is already scheduled, don't queue another one
+    if (this.reconnectTimeoutId !== null) {
+      return;
+    }
+
     const previousMode = this.connection.mode;
     const schedule = this.activeAdapter.scheduleReconnect();
     this.connection = schedule.connection;
@@ -302,7 +308,8 @@ export class MockPrinterService {
       return;
     }
 
-    setTimeout(() => {
+    this.reconnectTimeoutId = setTimeout(() => {
+      this.reconnectTimeoutId = null;
       void this.completeReconnect(previousMode);
     }, schedule.delayMs);
   }

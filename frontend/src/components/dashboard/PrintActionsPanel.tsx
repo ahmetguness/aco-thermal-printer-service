@@ -5,6 +5,7 @@ import {
   getReceiptTotal,
 } from "../../data/sampleReceipt";
 import logo from "../../assets/logo/logo.png";
+import type { ReactNode } from "react";
 import type { PrintLanguage, ReceiptPrintRequest } from "../../types/printer";
 
 interface PrintActionsPanelProps {
@@ -25,6 +26,7 @@ interface PrintActionsPanelProps {
   onTextChange: (value: string) => void;
   isConnected: boolean;
   hasError: boolean;
+  queueSlot?: ReactNode;
 }
 
 export function PrintActionsPanel({
@@ -45,6 +47,7 @@ export function PrintActionsPanel({
   onTextChange,
   isConnected,
   hasError,
+  queueSlot,
 }: PrintActionsPanelProps) {
   const baseSampleReceipt = createSampleReceipt(language);
   const sampleReceipt: ReceiptPrintRequest = {
@@ -194,6 +197,7 @@ export function PrintActionsPanel({
               </button>
             </div>
           </div>
+          {queueSlot ? <div className="print-actions-queue-slot">{queueSlot}</div> : null}
         </div>
 
         {/* Right Side: Live Thermal Receipt Preview */}
