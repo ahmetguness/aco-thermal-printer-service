@@ -1,5 +1,6 @@
 {
   "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "ACO Thermal Printer Service",
     "description": "Ready-to-use Postman collection for testing the thermal printer service API.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -32,270 +33,318 @@
     {
       "name": "Health",
       "request": {
-        "auth": {
-          "type": "noauth"
-        },
+        "auth": { "type": "noauth" },
         "method": "GET",
-        "url": "{{baseUrl}}/health"
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
       }
     },
     {
       "name": "Connect USB",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"mode\": \"usb\"\n}"
+          "raw": "{\n  \"mode\": \"usb\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/connect"
+        "url": {
+          "raw": "{{baseUrl}}/connect",
+          "host": ["{{baseUrl}}"],
+          "path": ["connect"]
+        }
       }
     },
     {
       "name": "Connect LAN",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"mode\": \"lan\"\n}"
+          "raw": "{\n  \"mode\": \"lan\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/connect"
+        "url": {
+          "raw": "{{baseUrl}}/connect",
+          "host": ["{{baseUrl}}"],
+          "path": ["connect"]
+        }
       }
     },
     {
       "name": "Status",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/status"
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/status",
+          "host": ["{{baseUrl}}"],
+          "path": ["status"]
+        }
       }
     },
     {
       "name": "Print Text",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"Merhaba ACO\",\n  \"language\": \"tr\",\n  \"idempotencyKey\": \"text-demo-001\"\n}"
+          "raw": "{\n  \"text\": \"Merhaba ACO\",\n  \"language\": \"tr\",\n  \"idempotencyKey\": \"text-demo-001\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/print/text"
+        "url": {
+          "raw": "{{baseUrl}}/print/text",
+          "host": ["{{baseUrl}}"],
+          "path": ["print", "text"]
+        }
       }
     },
     {
       "name": "Print QR",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"data\": \"ACO|ACO-TEST-0001-0001|2025-09-16T16:19:02.000Z|3.00|TRY\"\n}"
+          "raw": "{\n  \"data\": \"ACO|ACO-TEST-0001-0001|2025-09-16T16:19:02.000Z|3.00|TRY\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/print/qr"
+        "url": {
+          "raw": "{{baseUrl}}/print/qr",
+          "host": ["{{baseUrl}}"],
+          "path": ["print", "qr"]
+        }
       }
     },
     {
       "name": "Print Image",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"imageBase64\": \"BASE64_IMAGE_DATA\",\n  \"filename\": \"receipt.png\"\n}"
+          "raw": "{\n  \"imageBase64\": \"BASE64_IMAGE_DATA\",\n  \"filename\": \"receipt.png\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/print/image"
+        "url": {
+          "raw": "{{baseUrl}}/print/image",
+          "host": ["{{baseUrl}}"],
+          "path": ["print", "image"]
+        }
       }
     },
     {
       "name": "Print ACO Receipt",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"machineId\": \"ACO-TEST-0001-0001\",\n  \"rewardName\": \"Aco Recycling Default Reward\",\n  \"currency\": \"TRY\",\n  \"issuedAt\": \"2025-09-16T16:19:02.000Z\",\n  \"items\": [\n    { \"product\": \"Glass\", \"quantity\": 0, \"reward\": 0 },\n    { \"product\": \"Plastic\", \"quantity\": 2, \"reward\": 2 },\n    { \"product\": \"Metal\", \"quantity\": 1, \"reward\": 1 },\n    { \"product\": \"Tetrapak\", \"quantity\": 0, \"reward\": 0 }\n  ],\n  \"qrPayload\": \"ACO|ACO-TEST-0001-0001|2025-09-16T16:19:02.000Z|3.00|TRY\",\n  \"language\": \"tr\"\n}"
+          "raw": "{\n  \"machineId\": \"ACO-TEST-0001-0001\",\n  \"rewardName\": \"Aco Recycling Default Reward\",\n  \"currency\": \"TRY\",\n  \"issuedAt\": \"2025-09-16T16:19:02.000Z\",\n  \"items\": [\n    { \"product\": \"Glass\", \"quantity\": 0, \"reward\": 0 },\n    { \"product\": \"Plastic\", \"quantity\": 2, \"reward\": 2 },\n    { \"product\": \"Metal\", \"quantity\": 1, \"reward\": 1 },\n    { \"product\": \"Tetrapak\", \"quantity\": 0, \"reward\": 0 }\n  ],\n  \"qrPayload\": \"ACO|ACO-TEST-0001-0001|2025-09-16T16:19:02.000Z|3.00|TRY\",\n  \"language\": \"tr\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/print/receipt"
+        "url": {
+          "raw": "{{baseUrl}}/print/receipt",
+          "host": ["{{baseUrl}}"],
+          "path": ["print", "receipt"]
+        }
       }
     },
     {
       "name": "Mock Paper Out",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paper\": \"out\"\n}"
+          "raw": "{\n  \"paper\": \"out\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/mock/health"
+        "url": {
+          "raw": "{{baseUrl}}/mock/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["mock", "health"]
+        }
       }
     },
     {
       "name": "Mock Cover Open",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"cover\": \"open\"\n}"
+          "raw": "{\n  \"cover\": \"open\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/mock/health"
+        "url": {
+          "raw": "{{baseUrl}}/mock/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["mock", "health"]
+        }
       }
     },
     {
       "name": "Mock Overheat",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"temperature\": \"overheat\"\n}"
+          "raw": "{\n  \"temperature\": \"overheat\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/mock/health"
+        "url": {
+          "raw": "{{baseUrl}}/mock/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["mock", "health"]
+        }
       }
     },
     {
       "name": "Reset Mock Health",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"paper\": \"ok\",\n  \"cover\": \"closed\",\n  \"temperature\": \"normal\"\n}"
+          "raw": "{\n  \"paper\": \"ok\",\n  \"cover\": \"closed\",\n  \"temperature\": \"normal\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/mock/health"
+        "url": {
+          "raw": "{{baseUrl}}/mock/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["mock", "health"]
+        }
       }
     },
     {
       "name": "Simulate Paper Jam",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res && res.data && res.data.id) {",
+              "  pm.collectionVariables.set('failedJobId', res.data.id);",
+              "  console.log('failedJobId set to:', res.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"Paper jam simulation\",\n  \"simulateError\": \"PAPER_JAM\"\n}"
+          "raw": "{\n  \"text\": \"Paper jam simulation\",\n  \"simulateError\": \"PAPER_JAM\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/print/text"
+        "url": {
+          "raw": "{{baseUrl}}/print/text",
+          "host": ["{{baseUrl}}"],
+          "path": ["print", "text"]
+        }
       }
     },
     {
       "name": "Simulate Unknown Command",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res && res.data && res.data.id) {",
+              "  pm.collectionVariables.set('failedJobId', res.data.id);",
+              "  console.log('failedJobId set to:', res.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"text\": \"Unknown command simulation\",\n  \"simulateError\": \"UNKNOWN_COMMAND\"\n}"
+          "raw": "{\n  \"text\": \"Unknown command simulation\",\n  \"simulateError\": \"UNKNOWN_COMMAND\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/print/text"
+        "url": {
+          "raw": "{{baseUrl}}/print/text",
+          "host": ["{{baseUrl}}"],
+          "path": ["print", "text"]
+        }
       }
     },
     {
       "name": "Simulate Disconnect",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{}"
+          "raw": "{}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/mock/disconnect"
+        "url": {
+          "raw": "{{baseUrl}}/mock/disconnect",
+          "host": ["{{baseUrl}}"],
+          "path": ["mock", "disconnect"]
+        }
       }
     },
     {
       "name": "Reprint Failed Job",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"jobId\": \"{{failedJobId}}\"\n}"
+          "raw": "{\n  \"jobId\": \"{{failedJobId}}\"\n}",
+          "options": { "raw": { "language": "json" } }
         },
-        "url": "{{baseUrl}}/reprint"
+        "url": {
+          "raw": "{{baseUrl}}/reprint",
+          "host": ["{{baseUrl}}"],
+          "path": ["reprint"]
+        }
       }
     },
     {
       "name": "Logs",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/logs"
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/logs",
+          "host": ["{{baseUrl}}"],
+          "path": ["logs"]
+        }
       }
     },
     {
       "name": "Export Logs CSV",
       "request": {
         "method": "GET",
-        "url": "{{baseUrl}}/logs/export"
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/logs/export",
+          "host": ["{{baseUrl}}"],
+          "path": ["logs", "export"]
+        }
       }
     }
   ]
