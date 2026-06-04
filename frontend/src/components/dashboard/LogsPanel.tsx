@@ -48,7 +48,7 @@ export function LogsPanel({ logs, language }: LogsPanelProps) {
 }
 
 function LogRow({ log, language }: { log: LogEntry; language: "tr" | "en" }) {
-  const isError = log.status === "error" || Boolean(log.error);
+  const isError = log.status === "error" || log.status === "failed" || Boolean(log.error);
   const rowClassName = isError ? "log-row log-row-error" : "log-row";
 
   return (
