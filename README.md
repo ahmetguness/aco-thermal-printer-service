@@ -137,7 +137,7 @@ docker compose up --build
 
 Bu compose dosyası backend'i container içinde `3000` portunda çalıştırır ve host makinede `http://localhost:3003` adresine açar. Frontend ise Nginx üzerinden `http://localhost:5173` adresinde servis edilir. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak saklanır.
 
-Docker Compose, kök dizindeki `.env` dosyası üzerinden override edilebilen güvenli varsayılanlar kullanır:
+Lokal Docker Compose kullanımı için `.env` dosyası zorunlu değildir. Compose dosyası aşağıdaki varsayılanlarla doğrudan çalışır:
 
 ```env
 PORT=3000
@@ -147,7 +147,9 @@ VITE_API_BASE_URL=http://localhost:3003
 VITE_API_ACCESS_TOKEN=test-token-1234
 ```
 
-VPS/domain deploy senaryosunda frontend'in tarayıcıdan erişeceği public API adresi build sırasında verilmelidir. Örneğin Nginx `/api` yolunu backend'e proxy ediyorsa kök `.env` şu şekilde olabilir:
+Varsayılanları değiştirmek isterseniz proje kökünde `.env.example` dosyasını `.env` olarak kopyalayabilirsiniz.
+
+VPS/domain deploy senaryosunda ise proje kökünde `.env` oluşturulması önerilir. Frontend'in tarayıcıdan erişeceği public API adresi build sırasında verilmelidir. Örneğin Nginx `/api` yolunu backend'e proxy ediyorsa kök `.env` şu şekilde olabilir:
 
 ```env
 API_ACCESS_TOKEN=strong-production-token
@@ -157,6 +159,20 @@ VITE_API_ACCESS_TOKEN=strong-production-token
 ```
 
 Bu değerler değiştirildiğinde frontend imajının yeni API adresiyle tekrar build edilmesi için `docker compose up -d --build` çalıştırılmalıdır.
+
+Zip arşivinden çıkaran bir kullanıcı lokal makinesinde ekstra `.env` oluşturmadan doğrudan şu komutla tüm sistemi başlatabilir:
+
+```bash
+docker compose up --build
+```
+
+Başlatma sonrası hızlı kontrol adresleri:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:3003`
+- Health check: `http://localhost:3003/health`
+
+Eğer `5173` veya `3003` portları makinede başka bir servis tarafından kullanılıyorsa `docker-compose.yml` içindeki port eşlemeleri değiştirilmelidir.
 
 ## Çevre Değişkenleri (.env)
 
