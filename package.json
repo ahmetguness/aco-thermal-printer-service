@@ -1,0 +1,16 @@
+{
+  "name": "aco-thermal-printer-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Thermal printer service with Express backend and Vite frontend.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build --prefix backend && npm run build --prefix frontend",
+    "smoke": "npm run smoke --prefix backend",
+    "start": "npm run start --prefix backend"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}

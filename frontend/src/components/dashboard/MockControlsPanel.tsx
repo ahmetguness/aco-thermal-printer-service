@@ -2,18 +2,22 @@ interface MockControlsPanelProps {
   language: "tr" | "en";
   onCoverOpen: () => void;
   onDisconnect: () => void;
+  onPaperJam: () => void;
   onOverheat: () => void;
   onPaperOut: () => void;
   onResetHealth: () => void;
+  onUnknownCommand: () => void;
 }
 
 export function MockControlsPanel({
   language,
   onCoverOpen,
   onDisconnect,
+  onPaperJam,
   onOverheat,
   onPaperOut,
   onResetHealth,
+  onUnknownCommand,
 }: MockControlsPanelProps) {
   return (
     <section className="panel simulation-panel">
@@ -30,8 +34,8 @@ export function MockControlsPanel({
           </button>
           <span className="button-helper-text">
             {language === "tr"
-              ? "Yazıcıda kağıt bittiğini simüle eder. Gelecek baskılar PAPER_OUT hatası alır."
-              : "Simulates that the printer is out of paper. Future print jobs will fail with a PAPER_OUT error."}
+              ? "Status hemen paper=out olur. Log kaydı, sonraki baskı PAPER_OUT ile başarısız olduğunda oluşur."
+              : "Status changes to paper=out immediately. A log entry is created when the next print fails with PAPER_OUT."}
           </span>
         </div>
 
@@ -41,8 +45,8 @@ export function MockControlsPanel({
           </button>
           <span className="button-helper-text">
             {language === "tr"
-              ? "Yazıcı kapağının açık olduğunu simüle eder. Gelecek baskılar COVER_OPEN hatası alır."
-              : "Simulates that the printer cover is open. Future print jobs will fail with a COVER_OPEN error."}
+              ? "Status hemen cover=open olur. Log kaydı, sonraki baskı COVER_OPEN ile başarısız olduğunda oluşur."
+              : "Status changes to cover=open immediately. A log entry is created when the next print fails with COVER_OPEN."}
           </span>
         </div>
 
@@ -52,8 +56,30 @@ export function MockControlsPanel({
           </button>
           <span className="button-helper-text">
             {language === "tr"
-              ? "Yazıcı kafasının aşırı ısındığını simüle eder. Gelecek baskılar OVERHEAT hatası alır."
-              : "Simulates print head overheating. Future print jobs will fail with an OVERHEAT error."}
+              ? "Status hemen temperature=overheat olur. Log kaydı, sonraki baskı OVERHEAT ile başarısız olduğunda oluşur."
+              : "Status changes to temperature=overheat immediately. A log entry is created when the next print fails with OVERHEAT."}
+          </span>
+        </div>
+
+        <div className="button-stack-item">
+          <button type="button" onClick={onPaperJam}>
+            {language === "tr" ? "Kağıt Sıkışması (Paper Jam)" : "Paper Jam"}
+          </button>
+          <span className="button-helper-text">
+            {language === "tr"
+              ? "Anında test baskısı oluşturur, işi PAPER_JAM ile failed yapar ve loglara kaydeder."
+              : "Creates a test print immediately, marks it failed with PAPER_JAM and writes it to the logs."}
+          </span>
+        </div>
+
+        <div className="button-stack-item">
+          <button type="button" onClick={onUnknownCommand}>
+            {language === "tr" ? "Bilinmeyen Komut (Unknown Command)" : "Unknown Command"}
+          </button>
+          <span className="button-helper-text">
+            {language === "tr"
+              ? "Anında test baskısı oluşturur, işi UNKNOWN_COMMAND ile failed yapar ve loglara kaydeder."
+              : "Creates a test print immediately, marks it failed with UNKNOWN_COMMAND and writes it to the logs."}
           </span>
         </div>
 

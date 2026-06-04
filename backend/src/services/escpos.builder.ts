@@ -38,11 +38,15 @@ export class EscposBuilder {
 
   buildReceipt(payload: ReceiptPrintPayload): PrinterCommandPayload {
     const total = payload.items.reduce((sum, item) => sum + item.reward, 0);
+    const totalText = total.toFixed(2);
+    const previewText = this.buildReceiptPreview(payload, totalText);
+
     return this.build(
       "receipt",
-      `receipt:${payload.machineId}:reward:${total}`,
-      payload.items.length * 48,
+      `receipt:${payload.machineId}:items:${payload.items.length}:reward:${totalText}`,
+      previewText.length,
       payload.language,
+      previewText,
     );
   }
 
@@ -55,6 +59,7 @@ export class EscposBuilder {
     summary: string,
     bytes: number,
     language?: PrintLanguage,
+    previewText?: string,
   ): PrinterCommandPayload {
     const resolvedLanguage = language ?? DEFAULT_LANGUAGE;
 
@@ -65,6 +70,40 @@ export class EscposBuilder {
       bytes,
       language: resolvedLanguage,
       codePage: this.resolveCodePage(resolvedLanguage),
+      previewText,
     };
+  }
+
+  private buildReceiptPreview(payload: ReceiptPrintPayload, totalText: string): string {
+    const currencySymbol = this.resolveCurrencySymbol(payload.currency);
+    const issuedAt = payload.issuedAt ?? new Date().toISOString();
+    const itemLines = payload.items.map(
+      (item) =>
+        `${item.product.padEnd(12, " ")} ${String(item.quantity).padStart(3, " ")} ${item.reward.toFixed(2)} ${currencySymbol}`,
+    );
+
+    return [
+      "*** ACO RECYCLING ***",
+      payload.rewardName,
+      `Machine: ${payload.machineId}`,
+      `Issued: ${issuedAt}`,
+      "------------------------",
+      "Item          Qty Reward",
+      ...itemLines,
+      "------------------------",
+      `Reward: ${totalText} ${currencySymbol}`,
+      payload.qrPayload ? `QR: ${payload.qrPayload}` : undefined,
+      "THANK YOU",
+    ]
+      .filter((line): line is string => line !== undefined)
+      .join("\n");
+  }
+
+  private resolveCurrencySymbol(currency?: string): string {
+    if (currency === "TRY" || currency === undefined) {
+      return "₺";
+    }
+
+    return currency;
   }
 }

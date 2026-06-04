@@ -5,6 +5,7 @@ import { MockControlsPanel } from "../components/dashboard/MockControlsPanel";
 import { PrintActionsPanel } from "../components/dashboard/PrintActionsPanel";
 import { QueuePanel } from "../components/dashboard/QueuePanel";
 import { StatusPanel } from "../components/dashboard/StatusPanel";
+import { createSampleReceipt } from "../data/sampleReceipt";
 import {
   connect,
   getLogs,
@@ -19,24 +20,9 @@ import {
   simulateDisconnect,
 } from "../lib/api";
 import type { ApiError } from "../types/api";
-import type { ConnectionMode, LogEntry, PrintLanguage, PrinterStatus } from "../types/printer";
+import type { ConnectionMode, LogEntry, PrintLanguage, PrinterErrorCode, PrinterStatus } from "../types/printer";
 
 type LoadState = "idle" | "loading" | "ready" | "error";
-
-const receiptExample = (language: PrintLanguage) => ({
-  machineId: "ACO-TEST-0001-0001",
-  rewardName: "Aco Recycling Default Reward",
-  currency: "TRY",
-  issuedAt: "2025-09-16T16:19:02.000Z",
-  items: [
-    { product: "Glass", quantity: 0, reward: 0 },
-    { product: "Plastic", quantity: 2, reward: 2 },
-    { product: "Metal", quantity: 1, reward: 1 },
-    { product: "Tetrapak", quantity: 0, reward: 0 },
-  ],
-  qrPayload: "ACO-TEST-0001-0001|3.00",
-  language,
-});
 
 export function DashboardPage() {
   const [mode, setMode] = useState<ConnectionMode>("usb");
@@ -195,7 +181,7 @@ export function DashboardPage() {
           }
           onPrintReceipt={() =>
             void runAction(async () => {
-              const response = await printReceipt(receiptExample(language));
+              const response = await printReceipt(createSampleReceipt(language));
               if (isFailure(response)) throw apiErrorToError(response.error);
             })
           }
@@ -219,6 +205,8 @@ export function DashboardPage() {
           onPaperOut={() => void runAction(() => setHealth({ paper: "out" }))}
           onCoverOpen={() => void runAction(() => setHealth({ cover: "open" }))}
           onOverheat={() => void runAction(() => setHealth({ temperature: "overheat" }))}
+          onPaperJam={() => void runAction(() => simulatePrinterError("PAPER_JAM", language))}
+          onUnknownCommand={() => void runAction(() => simulatePrinterError("UNKNOWN_COMMAND", language))}
           onResetHealth={() => void runAction(() => setHealth({ paper: "ok", cover: "closed", temperature: "normal" }))}
           onDisconnect={() =>
             void runAction(async () => {
@@ -236,6 +224,16 @@ export function DashboardPage() {
 
 async function setHealth(body: Parameters<typeof setMockHealth>[0]): Promise<void> {
   const response = await setMockHealth(body);
+  if (isFailure(response)) throw apiErrorToError(response.error);
+}
+
+async function simulatePrinterError(code: PrinterErrorCode, language: PrintLanguage): Promise<void> {
+  const response = await printText({
+    text: `Mock error simulation: ${code}`,
+    language,
+    simulateError: code,
+  });
+
   if (isFailure(response)) throw apiErrorToError(response.error);
 }
 

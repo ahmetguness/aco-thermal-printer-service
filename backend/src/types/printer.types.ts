@@ -123,6 +123,7 @@ export interface PrinterCommandPayload {
   bytes: number;
   language: PrintLanguage;
   codePage: string;
+  previewText?: string;
 }
 
 export type PrinterAdapterResult =

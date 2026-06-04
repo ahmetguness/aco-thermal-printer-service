@@ -1,5 +1,7 @@
 # Termal Yazıcı Servisi Teknik Dokümantasyonu
 
+Canlı demo: https://aco-recycling-task.online/
+
 Merhaba. Bu dökümanda geliştirdiğim termal yazıcı entegrasyon servisinin tüm mimarisini, kurulum adımlarını, API uçlarını ve simülasyon detaylarını anlatmaya çalıştım. Projeyi tasarlarken hem core gereksinimleri eksiksiz karşılamaya hem de belirtilen bonus özellikleri ekleyerek modüler ve type-safe bir yapı kurmaya özen gösterdim.
 
 Fiziksel bir yazıcıya erişimim olmadığı için sistemi tamamen mock/simülasyon katmanları üzerinden kurguladım. İleride gerçek bir donanım geldiğinde sadece ilgili adaptör sınıfını yazarak sisteme kolayca entegre edebilmemiz için kod tabanını arayüz (interface) tabanlı tasarladım. Ayrıca projede hicbir yerde type safety'yi bozmamak adına "any" kullanmadım.
@@ -68,20 +70,24 @@ backend/src/
 
 Projeyi çalıştırmak için iki farklı yöntemi de destekleyecek şekilde yapılandırdım.
 
-### 1. Yerel Makinede Başlatma
+### 1. Yerel Makinede Tek Komutla Başlatma
 
-Backend bağımlılıklarını yüklemek ve çalıştırmak için:
+Backend ve frontend'i birlikte geliştirme modunda başlatmak için kök dizinde şu komutları çalıştırabilirsiniz:
+
+```bash
+npm install
+npm run dev
+```
+
+Bu komut backend'i `http://localhost:3000`, frontend'i ise Vite geliştirme portunda başlatır.
+
+Backend ve frontend'i ayrı terminallerde çalıştırmak isterseniz aşağıdaki komutları da kullanabilirsiniz:
 
 ```bash
 cd backend
 npm install
-npm run build
-npm start
-```
+npm run dev
 
-Frontend bağımlılıklarını yüklemek ve çalıştırmak için:
-
-```bash
 cd frontend
 npm install
 npm run dev
@@ -89,15 +95,15 @@ npm run dev
 
 Varsayılan olarak backend 3000 portunda (http://localhost:3000), frontend ise Vite'ın atadığı portta çalışır. Frontend API isteklerini backend'e gönderecek şekilde yapılandırılmıştır.
 
-### 2. Docker Compose ile Başlatma
+### 2. Docker Compose ile Backend Başlatma
 
-Projeyi tek bir komutla ayağa kaldırmak isterseniz kök dizindeyken şu komutu çalıştırabilirsiniz:
+Backend servisini Docker Compose ile tek komutta ayağa kaldırmak isterseniz kök dizindeyken şu komutu çalıştırabilirsiniz:
 
 ```bash
 docker compose up --build
 ```
 
-Bu komut hem backend'i hem de frontend'i ayağa kaldırır. Backend'e yine http://localhost:3000 üzerinden erişilebilir. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak host makinedeki backend/storage dizinine bağlanmıştır.
+Bu compose dosyası backend'i container içinde `3000` portunda çalıştırır ve host makinede `http://localhost:3003` adresine açar. Frontend'i lokal geliştirme modunda çalıştırmak için ayrı bir terminalde `frontend` klasöründe `npm run dev` komutunu kullanabilirsiniz. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak saklanır.
 
 ## Çevre Değişkenleri (.env)
 
@@ -181,7 +187,7 @@ Yazdırma panelinin sağ tarafında, **gerçekçi bir termal kağıt slipi** gö
 | `POST` | `/print/text` | Basit metin yazdırır | Token Gerekli |
 | `POST` | `/print/image` | Base64 formatında görsel yazdırır (hata durumunda yedekler) | Token Gerekli |
 | `POST` | `/print/qr` | QR kod yazdırır | Token Gerekli |
-| `POST` | `/print/receipt` | Detaylı geri dönüşüm ödül fişi basar | Token Gerekli |
+| `POST` | `/print/receipt` | Bonus/custom endpoint: ACO tarzı detaylı ödül fişi basar | Token Gerekli |
 | `POST` | `/reprint` | Yalnızca başarısız olmuş bir işi tekrar sıraya alır | Token Gerekli |
 | `GET` | `/logs` | Tüm log geçmişini JSON olarak döner | Token Gerekli |
 | `GET` | `/logs/export` | Tüm log geçmişini CSV dosyası olarak indirir | Token Gerekli |
@@ -275,17 +281,19 @@ Not: `mode` değeri sadece `usb` veya `lan` olabilir.
 ### 6. Fiş Yazdırma
 - HTTP Metodu: `POST`
 - Endpoint: `/print/receipt`
+- Not: Minimum gereksinimlerin üzerine eklenen domain-specific endpoint'tir; ACO tarzı ödül fişini ürün tablosu, toplam ödül, QR payload ve dil/codepage bilgisiyle basar.
 - Gövde (Body):
 ```json
 {
   "machineId": "ACO-M-99",
   "rewardName": "Aco Gift Coupon",
   "currency": "TRY",
+  "issuedAt": "2025-09-16T16:19:02.000Z",
   "items": [
     { "product": "Plastic Bottle", "quantity": 3, "reward": 3 },
     { "product": "Glass Bottle", "quantity": 2, "reward": 4 }
   ],
-  "qrPayload": "ACO-M-99|7.00",
+  "qrPayload": "ACO|ACO-M-99|2025-09-16T16:19:02.000Z|7.00|TRY",
   "language": "tr"
 }
 ```
@@ -331,6 +339,8 @@ Aşağıdaki hata kodları hem simülasyonda hem de API hata dönüşlerinde (ve
 | `COMM_ERROR` | Donanımla kurulan haberleşme hattında kopma oluştu |
 | `UNKNOWN_COMMAND` | Yazıcıya gönderilen komut veya parametrelerin geçersiz olması |
 
+> Not: `/mock/health` ile verilen sensör hataları (`PAPER_OUT`, `COVER_OPEN`, `OVERHEAT`) cihaz durumunu `/status` içinde hemen değiştirir. Bu butonlar tek başına print job oluşturmadığı için hata logu, bir sonraki `/print/*` isteği bu durum nedeniyle başarısız olduğunda oluşur. `PAPER_JAM` ve `UNKNOWN_COMMAND` ise UI'daki test butonları üzerinden anında failed test job oluşturur ve doğrudan `/logs` içine hata kaydı yazar.
+
 ### Veri Depolama ve Kalıcılık Modeli
 
 | Veri Tipi | Depolama Katmanı | Kalıcılık Durumu | Açıklama |
@@ -347,7 +357,7 @@ curl -X POST http://localhost:3000/mock/health \
   -H "Content-Type: application/json" \
   -d "{\"paper\":\"out\"}"
 ```
-Bu istekten sonra atacağınız tüm yazdırma istekleri `PAPER_OUT` hata koduyla başarısız olacaktır. Tekrar düzeltmek için `"paper":"ok"` gönderebilirsiniz.
+Bu istekten sonra `/status` içinde `paper = out` görünür. Atacağınız sonraki yazdırma isteği `PAPER_OUT` hata koduyla başarısız olur ve log kaydı o başarısız print sırasında oluşur. Tekrar düzeltmek için `"paper":"ok"` gönderebilirsiniz.
 
 ### 2. Kapak Açık Hatası Simüle Etme
 ```bash

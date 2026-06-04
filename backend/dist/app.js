@@ -11,13 +11,13 @@ const api_types_1 = require("./types/api.types");
 exports.app = (0, express_1.default)();
 exports.app.use((0, cors_1.default)());
 exports.app.use(express_1.default.json({ limit: "10mb" }));
-exports.app.use(printer_routes_1.printerRouter);
 exports.app.get("/health", (_req, res) => {
     res.json((0, api_types_1.createApiSuccess)({
         status: "ok",
         service: "thermal-printer-service",
     }));
 });
+exports.app.use(printer_routes_1.printerRouter);
 exports.app.use((_req, res) => {
     res.status(404).json((0, api_types_1.createApiFailure)({
         code: "NOT_FOUND",

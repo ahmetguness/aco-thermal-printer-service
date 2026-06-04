@@ -1,5 +1,11 @@
-import { useState } from "react";
-import type { PrintLanguage } from "../../types/printer";
+import {
+  createSampleReceipt,
+  formatReceiptIssuedAt,
+  formatReceiptReward,
+  getReceiptTotal,
+} from "../../data/sampleReceipt";
+import logo from "../../assets/logo/logo.png";
+import type { PrintLanguage, ReceiptPrintRequest } from "../../types/printer";
 
 interface PrintActionsPanelProps {
   imageBase64: string;
@@ -40,7 +46,12 @@ export function PrintActionsPanel({
   isConnected,
   hasError,
 }: PrintActionsPanelProps) {
-  const [previewTab, setPreviewTab] = useState<"text" | "qr" | "image" | "receipt">("text");
+  const baseSampleReceipt = createSampleReceipt(language);
+  const sampleReceipt: ReceiptPrintRequest = {
+    ...baseSampleReceipt,
+    qrPayload: qrData.trim() || baseSampleReceipt.qrPayload,
+  };
+  const receiptTotal = getReceiptTotal(sampleReceipt.items);
 
   return (
     <section className="panel full">
@@ -77,11 +88,7 @@ export function PrintActionsPanel({
                 <label>{uiLanguage === "tr" ? "Metin" : "Text"}</label>
                 <input
                   value={text}
-                  onChange={(event) => {
-                    onTextChange(event.target.value);
-                    setPreviewTab("text");
-                  }}
-                  onFocus={() => setPreviewTab("text")}
+                  onChange={(event) => onTextChange(event.target.value)}
                   placeholder="Merhaba ACO"
                 />
               </div>
@@ -101,11 +108,7 @@ export function PrintActionsPanel({
                 <label>{uiLanguage === "tr" ? "QR Kod Verisi" : "QR Code Payload"}</label>
                 <input
                   value={qrData}
-                  onChange={(event) => {
-                    onQrDataChange(event.target.value);
-                    setPreviewTab("qr");
-                  }}
-                  onFocus={() => setPreviewTab("qr")}
+                  onChange={(event) => onQrDataChange(event.target.value)}
                   placeholder="https://aco-recycling.example/reward/abc123"
                 />
               </div>
@@ -128,11 +131,7 @@ export function PrintActionsPanel({
                   <div style={{ display: "flex", gap: "8px" }}>
                     <input
                       value={imageBase64}
-                      onChange={(event) => {
-                        onImageBase64Change(event.target.value);
-                        setPreviewTab("image");
-                      }}
-                      onFocus={() => setPreviewTab("image")}
+                      onChange={(event) => onImageBase64Change(event.target.value)}
                       placeholder="BASE64_IMAGE_DATA"
                       style={{ flex: 1 }}
                     />
@@ -152,7 +151,6 @@ export function PrintActionsPanel({
                               onImageBase64Change(base64String);
                             };
                             reader.readAsDataURL(file);
-                            setPreviewTab("image");
                           }
                         }}
                       />
@@ -167,11 +165,7 @@ export function PrintActionsPanel({
                   <label>{uiLanguage === "tr" ? "Dosya Adı" : "Filename"}</label>
                   <input
                     value={imageFilename}
-                    onChange={(event) => {
-                      onImageFilenameChange(event.target.value);
-                      setPreviewTab("image");
-                    }}
-                    onFocus={() => setPreviewTab("image")}
+                    onChange={(event) => onImageFilenameChange(event.target.value)}
                     placeholder="receipt.png"
                   />
                 </div>
@@ -216,161 +210,173 @@ export function PrintActionsPanel({
                 }
               />
             </span>
-            <div className="segmented" style={{ marginBottom: 0, padding: "2px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px", width: "280px" }}>
-              <button
-                className={previewTab === "text" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
-                type="button"
-                onClick={() => setPreviewTab("text")}
-              >
-                {uiLanguage === "tr" ? "Metin" : "Text"}
-              </button>
-              <button
-                className={previewTab === "qr" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
-                type="button"
-                onClick={() => setPreviewTab("qr")}
-              >
-                QR
-              </button>
-              <button
-                className={previewTab === "image" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
-                type="button"
-                onClick={() => setPreviewTab("image")}
-              >
-                {uiLanguage === "tr" ? "Görsel" : "Image"}
-              </button>
-              <button
-                className={previewTab === "receipt" ? "active" : ""}
-                style={{ minHeight: "26px", fontSize: "0.75rem", padding: "2px 4px", width: "100%" }}
-                type="button"
-                onClick={() => setPreviewTab("receipt")}
-              >
-                {uiLanguage === "tr" ? "Fiş" : "Receipt"}
-              </button>
-            </div>
           </div>
 
           <div className="ticket-paper">
-            <div className="ticket-header-area">
-              *** ACO RECYCLING ***
-              <br />
-              {language === "tr" ? "AKILLI İADE GERİ KAZANIM" : "SMART DEPOSIT REVENUE"}
-              <div className="ticket-divider"></div>
-            </div>
-
-            <div className="ticket-content">
-              {previewTab === "text" && (
-                <div style={{ textAlign: "center", padding: "10px 0" }}>
-                  <span style={{ fontSize: "0.7rem", color: "#666", display: "block", marginBottom: "8px", fontStyle: "italic" }}>
-                    {language === "tr" ? "[ METİN BASKI ÖNİZLEMESİ ]" : "[ TEXT PRINT PREVIEW ]"}
-                  </span>
-                  <strong style={{ fontSize: "0.9rem" }}>{text || (language === "tr" ? "(Boş Metin)" : "(Empty Text)")}</strong>
-                </div>
-              )}
-
-              {previewTab === "qr" && (
-                <div style={{ textAlign: "center" }}>
-                  <span style={{ fontSize: "0.7rem", color: "#666", display: "block", marginBottom: "4px", fontStyle: "italic" }}>
-                    {language === "tr" ? "[ QR KOD ÖNİZLEMESİ ]" : "[ QR CODE PREVIEW ]"}
-                  </span>
-                  <div className="mock-qr-code">
-                    <div className="mock-qr-pattern"></div>
-                    <div className="mock-qr-corner mock-qr-tl"></div>
-                    <div className="mock-qr-tr mock-qr-corner"></div>
-                    <div className="mock-qr-bl mock-qr-corner"></div>
-                  </div>
-                  <span style={{ fontSize: "0.68rem", color: "#333", wordBreak: "break-all", display: "block", marginTop: "4px" }}>
-                    {qrData || "https://aco-recycling.com"}
-                  </span>
-                </div>
-              )}
-
-              {previewTab === "image" && (
-                <div style={{ textAlign: "center", padding: "10px 0" }}>
-                  <span style={{ fontSize: "0.7rem", color: "#666", display: "block", marginBottom: "4px", fontStyle: "italic" }}>
-                    {language === "tr" ? "[ GÖRSEL BASKI ÖNİZLEMESİ ]" : "[ BITMAP IMAGE PREVIEW ]"}
-                  </span>
-                  <div style={{ border: "1px dashed #888", padding: "12px 8px", margin: "8px 0", borderRadius: "3px", background: "#f5f5f0" }}>
-                    {imageBase64 && imageBase64 !== "BASE64_IMAGE_DATA" ? (
-                      <img
-                        src={imageBase64.startsWith("data:image/") ? imageBase64 : `data:image/png;base64,${imageBase64}`}
-                        alt="Preview"
-                        style={{ maxWidth: "100%", maxHeight: "140px", height: "auto", display: "block", margin: "0 auto", borderRadius: "2px", objectFit: "contain" }}
-                      />
-                    ) : (
-                      <>
-                        {language === "tr" ? "[ GÖRSEL YAZDIRILDI ]" : "[ IMAGE RENDERED ]"}
-                        <br />
-                        <span style={{ fontSize: "0.68rem", color: "#555", fontWeight: "bold" }}>
-                          {imageFilename || "receipt.png"}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <span style={{ fontSize: "0.65rem", color: "#888", display: "block" }}>
-                    Base64: {imageBase64 ? `${imageBase64.substring(0, 24)}...` : (language === "tr" ? "(Boş)" : "(Empty)")}
-                  </span>
-                </div>
-              )}
-
-              {previewTab === "receipt" && (
-                <div>
-                  <div style={{ fontSize: "0.75rem", marginBottom: "4px", lineHeight: "1.3" }}>
-                    {language === "tr" ? "Cihaz ID: ACO-TEST-0001" : "Machine: ACO-TEST-0001"}
-                    <br />
-                    {language === "tr" ? "Tarih: 16.09.2025 16:19" : "Date: 16.09.2025 16:19"}
-                  </div>
-                  <div className="ticket-divider"></div>
-                  <table className="ticket-receipt-table">
-                    <thead>
-                      <tr>
-                        <th>{language === "tr" ? "Malzeme" : "Material"}</th>
-                        <th style={{ textAlign: "center" }}>{language === "tr" ? "Adet" : "Qty"}</th>
-                        <th style={{ textAlign: "right" }}>{language === "tr" ? "Ödül" : "Reward"}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>{language === "tr" ? "Cam (Glass)" : "Glass (Cam)"}</td>
-                        <td style={{ textAlign: "center" }}>0</td>
-                        <td style={{ textAlign: "right" }}>0.00 TL</td>
-                      </tr>
-                      <tr>
-                        <td>{language === "tr" ? "Plastik (Plastic)" : "Plastic (Plastik)"}</td>
-                        <td style={{ textAlign: "center" }}>2</td>
-                        <td style={{ textAlign: "right" }}>2.00 TL</td>
-                      </tr>
-                      <tr>
-                        <td>{language === "tr" ? "Metal (Metal)" : "Metal (Metal)"}</td>
-                        <td style={{ textAlign: "center" }}>1</td>
-                        <td style={{ textAlign: "right" }}>1.00 TL</td>
-                      </tr>
-                      <tr>
-                        <td>Tetrapak</td>
-                        <td style={{ textAlign: "center" }}>0</td>
-                        <td style={{ textAlign: "right" }}>0.00 TL</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <div className="ticket-receipt-total">
-                    <span>{language === "tr" ? "TOPLAM ÖDÜL:" : "TOTAL REWARD:"}</span>
-                    <span>3.00 TL</span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="ticket-divider"></div>
-            <div className="ticket-footer-area">
-              TEŞEKKÜRLER / THANK YOU
-              <br />
-              ACO RECYCLING SMART INITIATIVES
-            </div>
+            <ReceiptPreview
+              imageBase64={imageBase64}
+              imageFilename={imageFilename}
+              language={language}
+              receipt={sampleReceipt}
+              text={text}
+              total={receiptTotal}
+            />
           </div>
         </div>
       </div>
     </section>
   );
+}
+
+interface ReceiptPreviewProps {
+  imageBase64: string;
+  imageFilename: string;
+  language: PrintLanguage;
+  receipt: ReceiptPrintRequest;
+  text: string;
+  total: number;
+}
+
+function ReceiptPreview({ imageBase64, imageFilename, language, receipt, text, total }: ReceiptPreviewProps) {
+  const imageSource = resolvePreviewImageSource(imageBase64);
+  const message = text.trim();
+
+  return (
+    <div className="receipt-preview">
+      <div className="receipt-logo-row">
+        <img alt="ACO Recycling" className="receipt-logo" src={logo} />
+      </div>
+
+      <div className="receipt-machine">MachineID: {receipt.machineId}</div>
+      <div className="receipt-date">{formatReceiptIssuedAt(receipt.issuedAt ?? "", language)} UTC</div>
+      <div className="receipt-reward-name">{receipt.rewardName}</div>
+      {message ? <div className="receipt-message">{message}</div> : null}
+      {imageSource ? (
+        <div className="receipt-image-block">
+          <img alt={imageFilename || "Receipt bitmap"} className="receipt-user-image" src={imageSource} />
+        </div>
+      ) : null}
+      <div className="receipt-total">
+        {language === "tr" ? "Ödül" : "Reward"}: {formatReceiptReward(total, receipt.currency)}
+      </div>
+
+      <table className="ticket-receipt-table receipt-reference-table">
+        <thead>
+          <tr>
+            <th>{language === "tr" ? "Ürün" : "Product"}</th>
+            <th>{language === "tr" ? "Adet" : "Quantity"}</th>
+            <th>{language === "tr" ? "Ödül" : "Reward"}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {receipt.items.map((item) => (
+            <tr key={item.product}>
+              <td>{getReceiptProductLabel(item.product, language)}</td>
+              <td>{item.quantity}</td>
+              <td>{formatReceiptTableReward(item.reward)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div className="receipt-qr-code" aria-label={receipt.qrPayload}>
+        <QrMatrix value={receipt.qrPayload ?? ""} />
+        <div className="mock-qr-corner mock-qr-tl"></div>
+        <div className="mock-qr-tr mock-qr-corner"></div>
+        <div className="mock-qr-bl mock-qr-corner"></div>
+      </div>
+    </div>
+  );
+}
+
+function QrMatrix({ value }: { value: string }) {
+  const cells = buildQrCells(value);
+
+  return (
+    <div className="receipt-qr-matrix" aria-hidden="true">
+      {cells.map((isDark, index) => (
+        <span className={isDark ? "qr-cell-dark" : "qr-cell-light"} key={index} />
+      ))}
+    </div>
+  );
+}
+
+function getReceiptProductLabel(product: string, language: PrintLanguage): string {
+  const labels: Record<string, { tr: string; en: string }> = {
+    Glass: { tr: "Cam", en: "Glass" },
+    Plastic: { tr: "Plastik", en: "Plastic" },
+    Metal: { tr: "Metal", en: "Metal" },
+    Tetrapak: { tr: "Tetrapak", en: "Tetrapak" },
+  };
+
+  return labels[product]?.[language] ?? product;
+}
+
+function formatReceiptTableReward(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+function resolvePreviewImageSource(value: string): string | null {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue || trimmedValue === "BASE64_IMAGE_DATA") {
+    return null;
+  }
+
+  if (trimmedValue.startsWith("data:image/")) {
+    return trimmedValue;
+  }
+
+  return `data:image/png;base64,${trimmedValue}`;
+}
+
+function buildQrCells(value: string): boolean[] {
+  const size = 21;
+  const cells = Array.from({ length: size * size }, (_, index) => {
+    const row = Math.floor(index / size);
+    const col = index % size;
+
+    if (isFinderPattern(row, col, 0, 0) || isFinderPattern(row, col, 0, 14) || isFinderPattern(row, col, 14, 0)) {
+      return false;
+    }
+
+    if (row === 6 || col === 6) {
+      return (row + col) % 2 === 0;
+    }
+
+    const hash = hashQrCell(value, row, col);
+    return hash % 5 < 2;
+  });
+
+  drawFinderPattern(cells, size, 0, 0);
+  drawFinderPattern(cells, size, 0, 14);
+  drawFinderPattern(cells, size, 14, 0);
+
+  return cells;
+}
+
+function isFinderPattern(row: number, col: number, startRow: number, startCol: number): boolean {
+  return row >= startRow && row < startRow + 7 && col >= startCol && col < startCol + 7;
+}
+
+function drawFinderPattern(cells: boolean[], size: number, startRow: number, startCol: number): void {
+  for (let row = 0; row < 7; row += 1) {
+    for (let col = 0; col < 7; col += 1) {
+      const isOuter = row === 0 || row === 6 || col === 0 || col === 6;
+      const isInner = row >= 2 && row <= 4 && col >= 2 && col <= 4;
+      cells[(startRow + row) * size + startCol + col] = isOuter || isInner;
+    }
+  }
+}
+
+function hashQrCell(value: string, row: number, col: number): number {
+  let hash = 2166136261;
+  const source = `${value}|${row}|${col}`;
+
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
 }

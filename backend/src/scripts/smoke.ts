@@ -34,6 +34,7 @@ interface LogEntry {
 }
 
 const baseUrl = process.env.SMOKE_BASE_URL ?? "http://localhost:3000";
+const accessToken = process.env.API_ACCESS_TOKEN ?? "test-token-1234";
 
 async function main(): Promise<void> {
   await check("GET /health", async () => {
@@ -87,7 +88,9 @@ async function main(): Promise<void> {
   });
 
   await check("GET /logs/export", async () => {
-    const response = await fetch(`${baseUrl}/logs/export`);
+    const response = await fetch(`${baseUrl}/logs/export`, {
+      headers: getAuthHeaders(),
+    });
     assert(response.ok, "CSV export should return 2xx");
     const csv = await response.text();
     assert(csv.startsWith("ts,op,conn,jobId,status,message,errorCode,errorDetail,errorUserMessage"), "CSV header mismatch");
@@ -97,7 +100,9 @@ async function main(): Promise<void> {
 }
 
 async function getJson<TData>(path: string): Promise<ApiResponse<TData>> {
-  const response = await fetch(`${baseUrl}${path}`);
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: getAuthHeaders(),
+  });
   return parseApiResponse<TData>(response);
 }
 
@@ -110,6 +115,7 @@ async function postJson<TData>(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(body),
   });
@@ -156,6 +162,12 @@ function assert(condition: boolean, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function getAuthHeaders(): Record<string, string> {
+  return {
+    Authorization: `Bearer ${accessToken}`,
+  };
 }
 
 async function check<T>(label: string, run: () => Promise<T>): Promise<T> {
