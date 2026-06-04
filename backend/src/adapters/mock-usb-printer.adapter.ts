@@ -1,6 +1,6 @@
-import { MockPrinterAdapter } from "./mock-printer.adapter";
+import { BaseMockPrinterAdapter } from "./mock-printer.adapter";
 
-export class MockUsbPrinterAdapter extends MockPrinterAdapter {
+export class MockUsbPrinterAdapter extends BaseMockPrinterAdapter {
   constructor() {
     super("usb");
   }

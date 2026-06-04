@@ -12,7 +12,7 @@ import type {
   PrinterHealth,
 } from "../types/printer.types";
 
-export abstract class MockPrinterAdapter implements PrinterAdapter {
+export abstract class BaseMockPrinterAdapter implements PrinterAdapter {
   private connection: ConnectionInfo = {
     mode: null,
     state: "disconnected",

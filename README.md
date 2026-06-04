@@ -2,6 +2,8 @@
 
 Canlı demo: https://aco-recycling-task.online/
 
+Hazır Postman koleksiyonu: `postman/ThermalPrinter.postman_collection.json`
+
 Merhaba. Bu dökümanda geliştirdiğim termal yazıcı entegrasyon servisinin tüm mimarisini, kurulum adımlarını, API uçlarını ve simülasyon detaylarını anlatmaya çalıştım. Projeyi tasarlarken hem core gereksinimleri eksiksiz karşılamaya hem de belirtilen bonus özellikleri ekleyerek modüler ve type-safe bir yapı kurmaya özen gösterdim.
 
 Fiziksel bir yazıcıya erişimim olmadığı için sistemi tamamen mock/simülasyon katmanları üzerinden kurguladım. İleride gerçek bir donanım geldiğinde sadece ilgili adaptör sınıfını yazarak sisteme kolayca entegre edebilmemiz için kod tabanını arayüz (interface) tabanlı tasarladım. Ayrıca projede hicbir yerde type safety'yi bozmamak adına "any" kullanmadım.
@@ -17,7 +19,7 @@ Servisin geliştirilmesinde aşağıdaki teknolojileri tercih ettim:
 - Core: Node.js (Express.js) ve TypeScript
 - Frontend: React (Vite), TypeScript, saf CSS (Outfit yazı tipi ve glassmorphic karanlık tema tasarımı ile)
 - Loglama: JSON dosya tabanlı loglama servisi ve CSV log export aracı
-- Dockerization: Multi-stage Dockerfile ve docker-compose yapılandırması
+- Docker yapılandırması: Multi-stage Dockerfile ve docker-compose yapılandırması
 
 ## Sistem Mimarisi ve Klasör Düzeni
 
@@ -28,7 +30,7 @@ Projeyi katmanlı mimariye uygun şekilde tasarlamaya çalıştım. İş mantı�
 ```mermaid
 graph LR
     A["Frontend<br/>(React + Vite)"] -->|HTTP/REST| B["Backend<br/>(Express + TypeScript)"]
-    B --> C["MockPrinterAdapter"]
+    B --> C["MockUsbPrinterAdapter / MockLanPrinterAdapter"]
     B --> D["Job Queue<br/>(In-Memory)"]
     B --> E["Logger<br/>(JSON File)"]
 ```
@@ -44,9 +46,9 @@ graph LR
 ### Katman Açıklamaları
 
 - Controller Katmanı: Gelen HTTP isteklerini karşılar, validator yardımcıları yardımıyla body doğrulamasını yapar ve servis katmanına iletir.
-- Servis Katmanı (Printer Service): Yazdırma işlerini (job) yönetir, kuyruğa ekler, hata durumlarında loglama yapar ve başarısız olan resim yazdırma isteklerini diskte yedekler.
+- Servis Katmanı (Printer Service): Yazdırma işlerini yönetir, kuyruğa ekler, hata durumlarında loglama yapar ve başarısız olan resim yazdırma isteklerini diskte yedekler.
 - Adaptör Katmanı (Printer Adapter): Donanım ile doğrudan iletişim kuran katmandır. `backend/src/adapters/printer.adapter.ts` içindeki kontrat sayesinde servis katmanı yazıcının USB veya LAN implementasyonu olduğunu bilmeden aynı arayüzle çalışır. Şu an fiziksel cihaz zorunlu olmadığı için ayrı `MockUsbPrinterAdapter` ve `MockLanPrinterAdapter` implementasyonları kullanılmaktadır.
-- Kuyruk Katmanı (Job Queue): Bellek üzerinde (in-memory) çalışan, iş durumlarını takip eden hafif bir kuyruk yapısıdır.
+- Kuyruk Katmanı (Job Queue): In-memory çalışan, iş durumlarını takip eden hafif bir kuyruk yapısıdır.
 - Loglama Katmanı (Logger Service): Tüm başarılı ve başarısız işlemleri belirtilen log şemasına uygun şekilde JSON formatında diske kaydeder ve CSV formatında export edilmesini sağlar.
 
 Klasör yapısı şu şekildedir:
@@ -58,13 +60,37 @@ backend/src/
   middleware/               Bearer token yetkilendirme katmanı
   routes/                   API yönlendirme tanımları
   services/                 Yazıcı iş mantığı ve ESC/POS komut oluşturucu
-  queue/                    Bellek içi kuyruk yöneticisi
+  queue/                    In-memory kuyruk yöneticisi
   logs/                     JSON log kaydedici ve CSV export sınıfı
   types/                    TypeScript tip tanımları (Dış API ve İç modeller)
   utils/                    Tip güvenli validator yardımcıları
   app.ts                    Express sunucu kurulumu
   server.ts                 Giriş noktası ve port dinleme
 ```
+
+## Datasheet Varsayımları
+
+Bu servis, görev paketinde sağlanan Cashino KP-300, KP-301H ve KP-302 termal yazıcı datasheet'leri referans alınarak tasarlanmıştır.
+
+Datasheet'lerde hedef yazıcı ailesinin USB ve LAN/Ethernet haberleşmesini, ESC/POS uyumlu komut yapısını, QR/2D barkod yazdırmayı, termal rulo kağıt baskısını, kağıt bitti algılamayı, kapak açık algılamayı, kesici/kağıt sıkışması senaryolarını ve aşırı sıcaklık korumasını desteklediği görülmektedir.
+
+Bu aşamada fiziksel donanım zorunlu olmadığı için bu donanım kabiliyetleri mock yazıcı adapter katmanı üzerinden temsil edilmiştir. Mock adapter katmanı, gerçek bir donanım adapter'ının taşıyacağı sorumlulukları korur: bağlantı yönetimi, aktif bağlantı modu takibi, yazıcı sağlık durumu, haberleşme hataları, baskı komutu yürütme ve reconnect/backoff davranışı.
+
+Aşağıdaki uygulama kararları datasheet'lerdeki kabiliyetlerden türetilmiştir:
+
+| Datasheet Kabiliyeti | Uygulamadaki Karşılığı |
+|---|---|
+| USB arayüzü | `POST /connect` endpoint'i `mode: "usb"` kabul eder ve UI aktif USB modunu gösterir |
+| LAN/Ethernet arayüzü | `POST /connect` endpoint'i `mode: "lan"` kabul eder ve UI aktif LAN modunu gösterir |
+| ESC/POS komut desteği | `EscposBuilder`, metin, görsel, QR ve fiş işlerini mock ESC/POS komut payload'larına dönüştürür |
+| QR Code / 2D barkod desteği | `/print/qr` endpoint'i ve fiş içindeki QR payload desteği |
+| Kağıt bitti algılama | `PAPER_OUT` simülasyonu, `/status.health.paper`, kullanıcı dostu UI hatası ve log kayıtları |
+| Kapak açık algılama | `COVER_OPEN` simülasyonu, `/status.health.cover`, kullanıcı dostu UI hatası ve log kayıtları |
+| Aşırı sıcaklık koruması | `OVERHEAT` simülasyonu, `/status.health.temperature`, kullanıcı dostu UI hatası ve log kayıtları |
+| Kağıt sıkışması / kesici sıkışması senaryoları | `PAPER_JAM` simülasyonu, failed job takibi ve reprint akışı |
+| Durum göstergeleri / sensör durumları | `/status` endpoint'i bağlantı, kağıt, kapak, sıcaklık, son iş ve kuyruk özetini döner |
+| Termal fiş baskısı | Özel `/print/receipt` endpoint'i, sağlanan örnek ACO ödül fişi görselini model alır |
+| Fiziksel donanımın bu aşamada bulunmaması | Arayüz tabanlı adapter tasarımı, mock adapter'ın ileride gerçek USB/LAN adapter ile değiştirilebilmesini sağlar |
 
 ## Kurulum ve Çalıştırma Adımları
 
@@ -124,10 +150,10 @@ VITE_API_ACCESS_TOKEN=test-token-1234
 
 Not: Lokal geliştirme ve testlerin kolay yapılabilmesi için `test-token-1234` örnek token olarak kullanılmıştır. Production ortamında `API_ACCESS_TOKEN` mutlaka güçlü ve rastgele bir değer olarak tanımlanmalıdır; production modunda backend token eksikse varsayılan token'a düşmez.
 
-## Güvenlik ve Yetkilendirme (Token-Based Auth)
+## Güvenlik ve Yetkilendirme (Token Tabanlı Erişim)
 
-Lokal/demo API erişimini kontrollü tutmak için basit Bearer token tabanlı bir yetkilendirme katmanı ekledim. `backend/src/middleware/auth.middleware.ts` dosyası içinde yazılan Express middleware'i, gelen isteklerde `Authorization: Bearer <token>` başlığının bulunup bulunmadığını kontrol eder.
-Eğer token geçersiz veya eksikse istemciye 401 Unauthorized durum koduyla birlikte şu formatta standart bir hata döner:
+Lokal/demo API erişimini kontrollü tutmak için basit Bearer token tabanlı bir yetkilendirme katmanı ekledim. `backend/src/middleware/auth.middleware.ts` dosyası içinde yazılan Express middleware, gelen isteklerde `Authorization: Bearer <token>` başlığının bulunup bulunmadığını kontrol eder.
+Eğer token geçersiz veya eksikse client'a 401 Unauthorized durum koduyla birlikte şu formatta standart bir hata döner:
 
 ```json
 {
@@ -139,7 +165,7 @@ Eğer token geçersiz veya eksikse istemciye 401 Unauthorized durum koduyla birl
 }
 ```
 
-Frontend uygulaması, her API isteğinde bu token değerini otomatik olarak header alanına enjekte eder. `VITE_API_ACCESS_TOKEN` tarayıcı bundle'ında görülebilen bir demo/client konfigürasyonudur; gerçek production kullanımında bu yapı tek başına kullanıcı kimlik doğrulaması yerine geçmez. Production deploy'da backend tarafında güçlü `API_ACCESS_TOKEN` kullanılmalı ve `CORS_ORIGIN` yalnızca izin verilen frontend domain'lerine ayarlanmalıdır.
+Frontend uygulaması, her API isteğinde bu token değerini otomatik olarak header alanına ekler. `VITE_API_ACCESS_TOKEN` tarayıcı bundle'ında görülebilen bir demo/client konfigürasyonudur; gerçek production kullanımında bu yapı tek başına kullanıcı kimlik doğrulaması yerine geçmez. Production deploy'da backend tarafında güçlü `API_ACCESS_TOKEN` kullanılmalı ve `CORS_ORIGIN` yalnızca izin verilen frontend domain'lerine ayarlanmalıdır.
 
 ## Kuyruk ve Tekrarlılık Güvenliği (Idempotency)
 
@@ -147,7 +173,7 @@ Aynı yazdırma işinin ağ kesintileri veya çift tıklama gibi nedenlerle tekr
 
 - İstek gövdesinde (örneğin `/print/text` isteğinde) opsiyonel olarak `idempotencyKey` alanı gönderilebilir.
 - Kuyruk servisi, bu anahtarla daha önce oluşturulmuş ve durumu "failed" olmayan (yani "queued", "printing" veya "success" olan) bir iş olup olmadığını kontrol eder.
-- Eğer eşleşen bir iş varsa, sunucu yeni bir yazdırma işi başlatmaz ve bellek içi kuyruktaki mevcut iş nesnesini istemciye geri döner. Bu sayede kağıt ve zaman israfı önlenmiş olur.
+- Eğer eşleşen bir iş varsa, sunucu yeni bir yazdırma işi başlatmaz ve in-memory kuyruktaki mevcut iş nesnesini client'a geri döner. Bu sayede kağıt ve zaman israfı önlenmiş olur.
 
 ## Tahminleme Motoru (Predictions)
 
@@ -164,22 +190,22 @@ Arayüz ve yazdırma çıktılarının dil yönetimi kullanıcı deneyimini maks
 1. **Arayüz Ekran Dili (Global UI Language - TR / EN Toggle):**
    - Sayfanın sağ üst köşesinde (topbar) bulunan **TR / EN** butonu ile tüm sayfanın dilini (başlıklar, buton etiketleri, sensör durum açıklamaları ve test paneli yardımcı açıklamaları) değiştirebilirsiniz.
    
-2. **Yazıcı Baskı Dili (Printer Command Language - Türkçe / English):**
+2. **Yazıcı Baskı Dili (Yazıcı Komut Dili - Türkçe / İngilizce):**
    - Yazdırma panelinin içinde yer alan dil seçici, **yalnızca fiziksel yazıcıya gönderilecek ESC/POS komut setini ve kağıt çıktısının dilini (CP857/CP437)** belirlemek üzere izole edilmiştir.
    - `tr` seçildiğinde Türkçe karakter setini destekleyen CP857 kod sayfası, `en` seçildiğinde varsayılan CP437 kod sayfası atanır.
 
 ---
 
-## Dinamik Fiş Önizleme Bileşeni (Live Thermal Receipt Preview)
+## Dinamik Fiş Önizleme Bileşeni
 
 Yazdırma panelinin sağ tarafında, **gerçekçi bir termal kağıt slipi** görünümünde tasarlanmış, tırtıklı kağıt kenar efektli ve monospace yazı tipli dinamik bir **"Live Preview"** alanı bulunmaktadır:
-- **Akıllı Sekme Geçişi:** Metin, QR veya Görsel alanlarında veri girilirken veya alanlara odaklanıldığında, önizleme otomatik olarak ilgili yazdırma tipinin önizlemesine (Text, QR, Image, Receipt) geçiş yapar.
-- **Baskı Dili Senkronizasyonu:** Fiş önizleme içeriğinin dili (Cihaz ID, Tarih, Malzeme Listesi, Toplam Tutar vb.) yerel Yazıcı Baskı Dili seçimine göre gerçek zamanlı güncellenir.
+- **Tek Fiş Üzerinden Dinamik Önizleme:** Metin, QR veya görsel alanlarında veri girildiğinde aynı ACO ödül fişi üzerinde ilgili alanlar gerçek zamanlı güncellenir.
+- **Baskı Dili Senkronizasyonu:** Fiş önizleme içeriğinin dili (MachineID/Tarih, ürün tablosu, ödül başlığı vb.) yerel Yazıcı Baskı Dili seçimine göre gerçek zamanlı güncellenir.
 
 
-## API Uçları (Endpoint'ler)
+## API Uçları
 
-### API Endpoint Haritası
+### API Uç Haritası
 
 | Metot | Endpoint | Açıklama | Yetkilendirme |
 |-------|----------|----------|---------------|
@@ -188,7 +214,7 @@ Yazdırma panelinin sağ tarafında, **gerçekçi bir termal kağıt slipi** gö
 | `POST` | `/print/text` | Basit metin yazdırır | Token Gerekli |
 | `POST` | `/print/image` | Base64 formatında görsel yazdırır (hata durumunda yedekler) | Token Gerekli |
 | `POST` | `/print/qr` | QR kod yazdırır | Token Gerekli |
-| `POST` | `/print/receipt` | Bonus/custom endpoint: ACO tarzı detaylı ödül fişi basar | Token Gerekli |
+| `POST` | `/print/receipt` | Özel uç: ACO tarzı detaylı ödül fişi basar | Token Gerekli |
 | `POST` | `/reprint` | Yalnızca başarısız olmuş bir işi tekrar sıraya alır | Token Gerekli |
 | `GET` | `/logs` | Tüm log geçmişini JSON olarak döner | Token Gerekli |
 | `GET` | `/logs/export` | Tüm log geçmişini CSV dosyası olarak indirir | Token Gerekli |
@@ -283,6 +309,7 @@ Not: `mode` değeri sadece `usb` veya `lan` olabilir.
 - HTTP Metodu: `POST`
 - Endpoint: `/print/receipt`
 - Not: Minimum gereksinimlerin üzerine eklenen domain-specific endpoint'tir; ACO tarzı ödül fişini ürün tablosu, toplam ödül, QR payload ve dil/codepage bilgisiyle basar.
+- Tasarım notu: Özel `/print/receipt` endpoint'i, görev paketinde sağlanan örnek fiş görselindeki yapı referans alınarak tasarlanmıştır.
 - Gövde (Body):
 ```json
 {
@@ -318,12 +345,14 @@ Not: Yalnızca başarısız olmuş (failed) işlerin tekrar basılmasına izin v
 - HTTP Metodu: `GET`
 - Endpoint: `/logs/export`
 
-### 10. Sağlık Kontrolü (Health-Check)
+### 10. Sağlık Kontrolü
 - HTTP Metodu: `GET`
 - Endpoint: `/health`
 - Not: Bu endpoint api yetkilendirmesi (Token) gerektirmez. Sunucunun ayakta olup olmadığını kontrol etmek içindir.
 
 ## Test ve Hata Simülasyon Senaryoları
+
+Hazır Postman koleksiyonu eklenmiştir: `postman/ThermalPrinter.postman_collection.json`.
 
 Sistem üzerinde hata durumlarının arayüze ve loglara yansımasını test edebilmek için özel mock endpoint'leri tanımladım. Bu endpoint'ler gerçek donanım olmaksızın test yapmayı sağlar.
 
@@ -346,8 +375,8 @@ Aşağıdaki hata kodları hem simülasyonda hem de API hata dönüşlerinde (ve
 
 | Veri Tipi | Depolama Katmanı | Kalıcılık Durumu | Açıklama |
 |-----------|------------------|------------------|----------|
-| İş Kuyruğu (Job Queue) | Bellek İçi Map (In-Memory) | Geçici (Restart ile silinir) | İşlerin sırasını ve anlık durumlarını takip eder |
-| Bağlantı Durumu (Conn State) | Bellek İçi Bellek | Geçici (Restart ile silinir) | Anlık aktif bağlantı modunu ve durumunu yönetir |
+| İş Kuyruğu | In-memory Map | Geçici (restart ile silinir) | İşlerin sırasını ve anlık durumlarını takip eder |
+| Bağlantı Durumu | In-memory state | Geçici (restart ile silinir) | Anlık aktif bağlantı modunu ve durumunu yönetir |
 | Log Kayıtları | `storage/logs.json` dosyası | Kalıcı (Dosya Sistemi) | Tüm işlemler bu dosyaya JSON nesnesi olarak eklenir (append) |
 | Başarısız Resimler | `storage/failed-images/*.json` | Kalıcı (Dosya Sistemi) | Başarısız görsel işlerin base64 dataları kurtarılmak üzere kaydedilir |
 

@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { mockPrinterAdapterRegistry, type MockPrinterAdapterRegistry } from "../adapters/mock-printer-adapter.registry";
-import type { MockPrinterAdapter } from "../adapters/mock-printer.adapter";
+import type { BaseMockPrinterAdapter } from "../adapters/mock-printer.adapter";
 import { loggerService } from "../logs/logger.service";
 import { jobQueueService, type JobQueueService } from "../queue/job-queue.service";
 import { EscposBuilder } from "./escpos.builder";
@@ -30,7 +30,7 @@ const REPRINTABLE_JOB_STATUS = "failed";
 export class MockPrinterService {
   private readonly escposBuilder = new EscposBuilder();
   private readonly failedImageDir = path.resolve(process.cwd(), "storage", "failed-images");
-  private activeAdapter: MockPrinterAdapter;
+  private activeAdapter: BaseMockPrinterAdapter;
   private paperConsumedMm = 0;
   private connection: ConnectionInfo = {
     mode: null,
@@ -131,7 +131,7 @@ export class MockPrinterService {
     };
   }
 
-  setHealth(health: Parameters<MockPrinterAdapter["setHealth"]>[0]): ReturnType<MockPrinterAdapter["setHealth"]> {
+  setHealth(health: Parameters<BaseMockPrinterAdapter["setHealth"]>[0]): ReturnType<BaseMockPrinterAdapter["setHealth"]> {
     if (health.paper === "ok") {
       this.paperConsumedMm = 0; // reset paper consumption on reload/paper change simulation
     }
