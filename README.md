@@ -154,6 +154,8 @@ VITE_API_BASE_URL=http://localhost:3000
 VITE_API_ACCESS_TOKEN=test-token-1234
 ```
 
+Not: `VITE_API_BASE_URL` verilmezse frontend, localhost üzerinde otomatik olarak `http://localhost:3000` adresini kullanır. Production/domain deploy senaryosunda aynı host üzerinden `/api` yoluna düşecek şekilde yedek davranış tanımlanmıştır.
+
 Not: Lokal geliştirme ve testlerin kolay yapılabilmesi için `test-token-1234` örnek token olarak kullanılmıştır. Production ortamında `API_ACCESS_TOKEN` mutlaka güçlü ve rastgele bir değer olarak tanımlanmalıdır; production modunda backend token eksikse varsayılan token'a düşmez.
 
 ## Güvenlik ve Yetkilendirme (Token Tabanlı Erişim)
@@ -204,9 +206,19 @@ Arayüz ve yazdırma çıktılarının dil yönetimi kullanıcı deneyimini maks
 
 ## Dinamik Fiş Önizleme Bileşeni
 
-Yazdırma panelinin sağ tarafında, **gerçekçi bir termal kağıt slipi** görünümünde tasarlanmış, tırtıklı kağıt kenar efektli ve monospace yazı tipli dinamik bir **"Live Preview"** alanı bulunmaktadır:
+Yazdırma panelinin sağ tarafında, **gerçekçi bir termal kağıt slipi** görünümünde tasarlanmış dinamik bir **"Live Preview"** alanı bulunmaktadır:
 - **Tek Fiş Üzerinden Dinamik Önizleme:** Metin, QR veya görsel alanlarında veri girildiğinde aynı ACO ödül fişi üzerinde ilgili alanlar gerçek zamanlı güncellenir.
 - **Baskı Dili Senkronizasyonu:** Fiş önizleme içeriğinin dili (MachineID/Tarih, ürün tablosu, ödül başlığı vb.) yerel Yazıcı Baskı Dili seçimine göre gerçek zamanlı güncellenir.
+
+## Dashboard Yerleşimi ve Operasyon Panelleri
+
+Frontend arayüzü üç ana bant halinde düzenlenmiştir:
+
+- Üst bantta bağlantı ayarları ile cihaz durumu/tahminler yan yana gösterilir.
+- Ana iş alanında yazdırma eylemleri, dinamik fiş önizleme ve baskı kuyruğu birlikte yer alır. Baskı kuyruğu, örnek fiş yazdırma akışının hemen altında konumlanır ve başarısız işler için `Tekrar Bastır` aksiyonunu sunar.
+- Alt destek bandında test/hata simülasyonu paneli ve sistem günlükleri yan yana gösterilir.
+
+Sistem günlükleri arayüzünde log durumları daha katı bir görsel sınıflamaya normalize edilir: `ok` ve `success` kayıtları **BAŞARILI**, `failed` kayıtları **BAŞARISIZ**, `error` veya hata objesi taşıyan kayıtlar **HATA**, kuyruk/işlem kayıtları ise **KUYRUKTA** veya **YAZDIRILIYOR** olarak gösterilir. Bu yalnızca UI etiketlemesidir; API'nin döndürdüğü ham log `status` alanı korunur.
 
 
 ## API Uçları
@@ -375,7 +387,7 @@ Aşağıdaki hata kodları hem simülasyonda hem de API hata dönüşlerinde (ve
 | `COMM_ERROR` | Donanımla kurulan haberleşme hattında kopma oluştu |
 | `UNKNOWN_COMMAND` | Yazıcıya gönderilen komut veya parametrelerin geçersiz olması |
 
-> Not: `/mock/health` ile verilen sensör hataları (`PAPER_OUT`, `COVER_OPEN`, `OVERHEAT`) cihaz durumunu `/status` içinde hemen değiştirir. Bu butonlar tek başına print job oluşturmadığı için hata logu, bir sonraki `/print/*` isteği bu durum nedeniyle başarısız olduğunda oluşur. `PAPER_JAM` ve `UNKNOWN_COMMAND` ise UI'daki test butonları üzerinden anında failed test job oluşturur ve doğrudan `/logs` içine hata kaydı yazar.
+> Not: `/mock/health` ile verilen sensör hataları (`PAPER_OUT`, `PAPER_JAM`, `COVER_OPEN`, `OVERHEAT`) cihaz durumunu `/status` içinde hemen değiştirir. Bu butonlar tek başına print job oluşturmadığı için hata logu, bir sonraki `/print/*` isteği bu durum nedeniyle başarısız olduğunda oluşur. `UNKNOWN_COMMAND` ise UI'daki test butonu üzerinden anında failed test job oluşturur ve doğrudan `/logs` içine hata kaydı yazar.
 
 ### Veri Depolama ve Kalıcılık Modeli
 
@@ -421,7 +433,7 @@ Bu komut, yazıcı bağlantısını koparır ve durumu "reconnecting" yapar. Sis
 
 ## Loglama Şeması Uyumluluğu
 
-Sistemde yapılan başarılı veya başarısız tüm işlemler `backend/storage/logs.json` dosyasına yazılır. Hata durumlarında yazılan log şeması dokümandaki örnekle tam olarak uyuşmaktadır:
+Sistemde yapılan başarılı veya başarısız tüm işlemler çalışma dizinine göre `storage/logs.json` dosyasına yazılır. Kök dizinden çalıştırıldığında bu dosya `./storage/logs.json` altında oluşur. Hata durumlarında yazılan log şeması dokümandaki örnekle tam olarak uyuşmaktadır:
 
 ```json
 {

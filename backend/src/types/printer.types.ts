@@ -27,7 +27,7 @@ export interface PrinterError {
 }
 
 export interface PrinterHealth {
-  paper: "ok" | "out" | "near_end";
+  paper: "ok" | "out" | "near_end" | "jam";
   cover: "closed" | "open";
   temperature: "normal" | "overheat";
 }

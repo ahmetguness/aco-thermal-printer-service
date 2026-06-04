@@ -26,6 +26,10 @@ export function StatusPanel({ status, language }: StatusPanelProps) {
         dotClass += " dot-warning";
         textClass += " text-warning";
         displayLabel = language === "tr" ? "AZALDI (Düşük)" : "NEAR END (Low)";
+      } else if (value === "jam") {
+        dotClass += " dot-danger";
+        textClass += " text-danger";
+        displayLabel = language === "tr" ? "SIKIŞTI" : "JAMMED";
       } else {
         dotClass += " dot-danger";
         textClass += " text-danger";

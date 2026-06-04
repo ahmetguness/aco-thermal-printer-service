@@ -234,6 +234,10 @@ export class MockPrinterService {
       return this.createError("PAPER_OUT");
     }
 
+    if (health.paper === "jam") {
+      return this.createError("PAPER_JAM");
+    }
+
     if (health.cover === "open") {
       return this.createError("COVER_OPEN");
     }

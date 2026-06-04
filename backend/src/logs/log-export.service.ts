@@ -30,7 +30,7 @@ export class LogExportService {
       message: log.message ?? "",
       errorCode: log.error?.code ?? "",
       errorDetail: log.error?.detail ?? "",
-      errorUserMessage: log.message ?? "",
+      errorUserMessage: log.error?.userMessage ?? "",
     };
 
     return CSV_HEADERS.map((header) => this.escapeCsv(values[header])).join(",");

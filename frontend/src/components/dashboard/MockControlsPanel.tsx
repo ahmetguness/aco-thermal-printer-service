@@ -65,8 +65,8 @@ export function MockControlsPanel({
       onClick: onPaperJam,
       helper:
         language === "tr"
-          ? "Anında test baskısı oluşturur, işi failed yapar ve loglara kaydeder."
-          : "Creates a test print immediately, marks it failed and writes it to the logs.",
+          ? "Status hemen paper=jam olur. Log kaydı sonraki başarısız baskıda oluşur."
+          : "Status changes to paper=jam immediately. A log entry is created on the next failed print.",
     },
     {
       title: language === "tr" ? "Bilinmeyen Komut" : "Unknown Command",

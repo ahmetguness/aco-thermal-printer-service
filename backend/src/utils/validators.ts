@@ -108,7 +108,12 @@ export function isSetMockHealthRequestBody(value: unknown): value is SetMockHeal
     return false;
   }
 
-  const validPaper = value.paper === undefined || value.paper === "ok" || value.paper === "out" || value.paper === "near_end";
+  const validPaper =
+    value.paper === undefined ||
+    value.paper === "ok" ||
+    value.paper === "out" ||
+    value.paper === "near_end" ||
+    value.paper === "jam";
   const validCover = value.cover === undefined || value.cover === "closed" || value.cover === "open";
   const validTemperature =
     value.temperature === undefined || value.temperature === "normal" || value.temperature === "overheat";
@@ -119,5 +124,10 @@ export function isSetMockHealthRequestBody(value: unknown): value is SetMockHeal
 }
 
 function hasValidSimulationOptions(value: Record<string, unknown>): boolean {
-  return value.simulateError === undefined || isPrinterErrorCode(value.simulateError);
+  const hasValidSimulatedError =
+    value.simulateError === undefined || isPrinterErrorCode(value.simulateError);
+  const hasValidIdempotencyKey =
+    value.idempotencyKey === undefined || isNonEmptyString(value.idempotencyKey);
+
+  return hasValidSimulatedError && hasValidIdempotencyKey;
 }

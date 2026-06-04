@@ -19,6 +19,7 @@ import {
   setMockHealth,
   simulateDisconnect,
 } from "../lib/api";
+import { assertPrintJobSucceeded } from "../lib/printJob";
 import type { ApiError } from "../types/api";
 import type { ConnectionMode, LogEntry, PrintLanguage, PrinterErrorCode, PrinterStatus } from "../types/printer";
 
@@ -156,6 +157,7 @@ export function DashboardPage() {
         hasError={
           status?.lastJob?.status === "failed" ||
           status?.health?.paper === "out" ||
+          status?.health?.paper === "jam" ||
           status?.health?.cover === "open" ||
           status?.health?.temperature === "overheat"
         }
@@ -163,12 +165,14 @@ export function DashboardPage() {
           void runAction(async () => {
             const response = await printText({ text, language });
             if (isFailure(response)) throw apiErrorToError(response.error);
+            assertPrintJobSucceeded(response.data, uiLanguage);
           })
         }
         onPrintQr={() =>
           void runAction(async () => {
             const response = await printQr({ data: qrData });
             if (isFailure(response)) throw apiErrorToError(response.error);
+            assertPrintJobSucceeded(response.data, uiLanguage);
           })
         }
         onPrintImage={() =>
@@ -178,12 +182,14 @@ export function DashboardPage() {
               filename: imageFilename,
             });
             if (isFailure(response)) throw apiErrorToError(response.error);
+            assertPrintJobSucceeded(response.data, uiLanguage);
           })
         }
         onPrintReceipt={() =>
           void runAction(async () => {
             const response = await printReceipt(createSampleReceipt(language));
             if (isFailure(response)) throw apiErrorToError(response.error);
+            assertPrintJobSucceeded(response.data, uiLanguage);
           })
         }
         queueSlot={
@@ -198,6 +204,7 @@ export function DashboardPage() {
                 if (!lastFailedJob) return;
                 const response = await reprint(lastFailedJob.id);
                 if (isFailure(response)) throw apiErrorToError(response.error);
+                assertPrintJobSucceeded(response.data, uiLanguage);
               })
             }
           />
@@ -210,8 +217,8 @@ export function DashboardPage() {
           onPaperOut={() => void runAction(() => setHealth({ paper: "out" }))}
           onCoverOpen={() => void runAction(() => setHealth({ cover: "open" }))}
           onOverheat={() => void runAction(() => setHealth({ temperature: "overheat" }))}
-          onPaperJam={() => void runAction(() => simulatePrinterError("PAPER_JAM", language))}
-          onUnknownCommand={() => void runAction(() => simulatePrinterError("UNKNOWN_COMMAND", language))}
+          onPaperJam={() => void runAction(() => setHealth({ paper: "jam" }))}
+          onUnknownCommand={() => void runAction(() => simulatePrinterError("UNKNOWN_COMMAND", language, uiLanguage))}
           onResetHealth={() => void runAction(() => setHealth({ paper: "ok", cover: "closed", temperature: "normal" }))}
           onDisconnect={() =>
             void runAction(async () => {
@@ -232,7 +239,11 @@ async function setHealth(body: Parameters<typeof setMockHealth>[0]): Promise<voi
   if (isFailure(response)) throw apiErrorToError(response.error);
 }
 
-async function simulatePrinterError(code: PrinterErrorCode, language: PrintLanguage): Promise<void> {
+async function simulatePrinterError(
+  code: PrinterErrorCode,
+  language: PrintLanguage,
+  uiLanguage: "tr" | "en",
+): Promise<void> {
   const response = await printText({
     text: `Mock error simulation: ${code}`,
     language,
@@ -240,6 +251,7 @@ async function simulatePrinterError(code: PrinterErrorCode, language: PrintLangu
   });
 
   if (isFailure(response)) throw apiErrorToError(response.error);
+  assertPrintJobSucceeded(response.data, uiLanguage);
 }
 
 function apiErrorToError(error: ApiError): Error {

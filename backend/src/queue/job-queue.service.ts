@@ -11,6 +11,7 @@ import type {
 
 export class JobQueueService {
   private readonly jobs = new Map<string, PrintJob<PrintablePayload>>();
+  private lastJobId: string | null = null;
 
   createJob(
     type: PrintJobType,
@@ -28,6 +29,7 @@ export class JobQueueService {
           j.status !== "failed"
       );
       if (existing) {
+        this.lastJobId = existing.id;
         return existing;
       }
     }
@@ -44,6 +46,7 @@ export class JobQueueService {
     };
 
     this.jobs.set(job.id, job);
+    this.lastJobId = job.id;
     return job;
   }
 
@@ -70,6 +73,7 @@ export class JobQueueService {
     };
 
     this.jobs.set(jobId, updatedJob);
+    this.lastJobId = jobId;
     return updatedJob;
   }
 
@@ -87,11 +91,12 @@ export class JobQueueService {
     };
 
     this.jobs.set(jobId, updatedJob);
+    this.lastJobId = jobId;
     return updatedJob;
   }
 
   getLastJob(): PrintJob<PrintablePayload> | null {
-    return Array.from(this.jobs.values()).at(-1) ?? null;
+    return this.lastJobId ? this.getJob(this.lastJobId) : null;
   }
 
   getSummary(): QueueSummary {
