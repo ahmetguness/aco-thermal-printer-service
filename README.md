@@ -8,6 +8,11 @@ Merhaba. Bu dökümanda geliştirdiğim termal yazıcı entegrasyon servisinin t
 
 Fiziksel bir yazıcıya erişimim olmadığı için sistemi tamamen mock/simülasyon katmanları üzerinden kurguladım. İleride gerçek bir donanım geldiğinde sadece ilgili adaptör sınıfını yazarak sisteme kolayca entegre edebilmemiz için kod tabanını arayüz (interface) tabanlı tasarladım. Ayrıca projede hicbir yerde type safety'yi bozmamak adına "any" kullanmadım.
 
+## Ekran Görüntüleri
+
+![Dashboard - Bağlı](docs/screenshots/dashboard-connected.png)
+![Dashboard - Hata](docs/screenshots/dashboard-error.png)
+
 ## Proje Hakkında ve Amaç
 
 Bu servis, geri dönüşüm otomatlarında atık karşılığı verilen ödül fişlerini (normal metin, resim, QR kod ve detaylı fiş formatında) termal yazıcılar vasıtasıyla yazdırmak amacıyla geliştirilmiştir. Sistem, localhost üzerinde Express.js backend ve modern bir React (Vite) frontend uygulaması olarak iki parça halinde çalışır.
