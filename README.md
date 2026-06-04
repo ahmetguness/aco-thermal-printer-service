@@ -137,6 +137,27 @@ docker compose up --build
 
 Bu compose dosyası backend'i container içinde `3000` portunda çalıştırır ve host makinede `http://localhost:3003` adresine açar. Frontend ise Nginx üzerinden `http://localhost:5173` adresinde servis edilir. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak saklanır.
 
+Docker Compose, kök dizindeki `.env` dosyası üzerinden override edilebilen güvenli varsayılanlar kullanır:
+
+```env
+PORT=3000
+API_ACCESS_TOKEN=test-token-1234
+CORS_ORIGIN=http://localhost:5173,https://aco-recycling-task.online
+VITE_API_BASE_URL=http://localhost:3003
+VITE_API_ACCESS_TOKEN=test-token-1234
+```
+
+VPS/domain deploy senaryosunda frontend'in tarayıcıdan erişeceği public API adresi build sırasında verilmelidir. Örneğin Nginx `/api` yolunu backend'e proxy ediyorsa kök `.env` şu şekilde olabilir:
+
+```env
+API_ACCESS_TOKEN=strong-production-token
+CORS_ORIGIN=https://aco-recycling-task.online
+VITE_API_BASE_URL=https://aco-recycling-task.online/api
+VITE_API_ACCESS_TOKEN=strong-production-token
+```
+
+Bu değerler değiştirildiğinde frontend imajının yeni API adresiyle tekrar build edilmesi için `docker compose up -d --build` çalıştırılmalıdır.
+
 ## Çevre Değişkenleri (.env)
 
 Projede hiçbir gizli bilgi veya port ayarı kod içerisine gömülmemiştir. .env.example dosyalarından türeterek kullanabileceğiniz çevre değişkenleri aşağıdadır:
