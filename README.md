@@ -10,8 +10,9 @@ Fiziksel bir yazıcıya erişimim olmadığı için sistemi tamamen mock/simüla
 
 ## Ekran Görüntüleri
 
-![Dashboard - Bağlı](docs/screenshots/dashboard-connected.png)
-![Dashboard - Hata](docs/screenshots/dashboard-error.png)
+| Bağlı | Hata |
+|:-----:|:----:|
+| ![Dashboard - Bağlı](docs/screenshots/dashboard-connected.png) | ![Dashboard - Hata](docs/screenshots/dashboard-error.png) |
 
 ## Proje Hakkında ve Amaç
 
