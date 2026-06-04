@@ -7,11 +7,25 @@ services:
     ports:
       - "3003:3000"
     environment:
-      PORT: "3000"
-      API_ACCESS_TOKEN: "test-token-1234"
-      CORS_ORIGIN: "https://aco-recycling-task.online"
+      PORT: "${PORT:-3000}"
+      API_ACCESS_TOKEN: "${API_ACCESS_TOKEN:-test-token-1234}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:5173,https://aco-recycling-task.online}"
     volumes:
       - backend-storage:/app/storage
+    restart: unless-stopped
+
+  thermal-printer-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: "${VITE_API_BASE_URL:-http://localhost:3003}"
+        VITE_API_ACCESS_TOKEN: "${VITE_API_ACCESS_TOKEN:-test-token-1234}"
+    container_name: aco-thermal-printer-frontend
+    depends_on:
+      - thermal-printer-service
+    ports:
+      - "5173:80"
     restart: unless-stopped
 
 volumes:

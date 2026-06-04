@@ -127,15 +127,15 @@ npm run dev
 
 Varsayılan olarak backend 3000 portunda (http://localhost:3000), frontend ise Vite'ın atadığı portta çalışır. Frontend API isteklerini backend'e gönderecek şekilde yapılandırılmıştır.
 
-### 2. Docker Compose ile Backend Başlatma
+### 2. Docker Compose ile Tüm Sistemi Başlatma
 
-Backend servisini Docker Compose ile tek komutta ayağa kaldırmak isterseniz kök dizindeyken şu komutu çalıştırabilirsiniz:
+Backend ve frontend'i Docker Compose ile tek komutta ayağa kaldırmak isterseniz kök dizindeyken şu komutu çalıştırabilirsiniz:
 
 ```bash
 docker compose up --build
 ```
 
-Bu compose dosyası backend'i container içinde `3000` portunda çalıştırır ve host makinede `http://localhost:3003` adresine açar. Frontend'i lokal geliştirme modunda çalıştırmak için ayrı bir terminalde `frontend` klasöründe `npm run dev` komutunu kullanabilirsiniz. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak saklanır.
+Bu compose dosyası backend'i container içinde `3000` portunda çalıştırır ve host makinede `http://localhost:3003` adresine açar. Frontend ise Nginx üzerinden `http://localhost:5173` adresinde servis edilir. Kaydedilen loglar ve başarısız görseller, container silinse dahi kaybolmaması için Docker volume olarak saklanır.
 
 ## Çevre Değişkenleri (.env)
 
