@@ -113,6 +113,7 @@ Projede hiçbir gizli bilgi veya port ayarı kod içerisine gömülmemiştir. .e
 ```env
 PORT=3000
 API_ACCESS_TOKEN=test-token-1234
+CORS_ORIGIN=http://localhost:5173
 ```
 
 ### Frontend (.env)
@@ -121,11 +122,11 @@ VITE_API_BASE_URL=http://localhost:3000
 VITE_API_ACCESS_TOKEN=test-token-1234
 ```
 
-Not: Testlerin kolay yapılabilmesi için projeyi ilk başlattığınızda her iki tarafta da "test-token-1234" token'ı varsayılan olarak tanımlı gelmektedir.
+Not: Lokal geliştirme ve testlerin kolay yapılabilmesi için `test-token-1234` örnek token olarak kullanılmıştır. Production ortamında `API_ACCESS_TOKEN` mutlaka güçlü ve rastgele bir değer olarak tanımlanmalıdır; production modunda backend token eksikse varsayılan token'a düşmez.
 
 ## Güvenlik ve Yetkilendirme (Token-Based Auth)
 
-Projede bonus puan getiren token tabanlı erişim kontrolünü uyguladım. `backend/src/middleware/auth.middleware.ts` dosyası içinde yazılan Express middleware'i, gelen isteklerde `Authorization: Bearer <token>` başlığının bulunup bulunmadığını kontrol eder.
+Lokal/demo API erişimini kontrollü tutmak için basit Bearer token tabanlı bir yetkilendirme katmanı ekledim. `backend/src/middleware/auth.middleware.ts` dosyası içinde yazılan Express middleware'i, gelen isteklerde `Authorization: Bearer <token>` başlığının bulunup bulunmadığını kontrol eder.
 Eğer token geçersiz veya eksikse istemciye 401 Unauthorized durum koduyla birlikte şu formatta standart bir hata döner:
 
 ```json
@@ -138,7 +139,7 @@ Eğer token geçersiz veya eksikse istemciye 401 Unauthorized durum koduyla birl
 }
 ```
 
-Frontend uygulamamız, her API isteğinde bu token değerini otomatik olarak header alanına enjekte etmektedir.
+Frontend uygulaması, her API isteğinde bu token değerini otomatik olarak header alanına enjekte eder. `VITE_API_ACCESS_TOKEN` tarayıcı bundle'ında görülebilen bir demo/client konfigürasyonudur; gerçek production kullanımında bu yapı tek başına kullanıcı kimlik doğrulaması yerine geçmez. Production deploy'da backend tarafında güçlü `API_ACCESS_TOKEN` kullanılmalı ve `CORS_ORIGIN` yalnızca izin verilen frontend domain'lerine ayarlanmalıdır.
 
 ## Kuyruk ve Tekrarlılık Güvenliği (Idempotency)
 

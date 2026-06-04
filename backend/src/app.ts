@@ -18,7 +18,11 @@ export interface HealthResponse {
 
 export const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: resolveCorsOrigin,
+  }),
+);
 app.use(express.json({ limit: "10mb" }));
 
 app.get("/health", (_req: Request, res: Response<ApiResponse<HealthResponse>>) => {
@@ -59,3 +63,31 @@ app.use(
     );
   },
 );
+
+function resolveCorsOrigin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void): void {
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
+
+  const allowedOrigins = getAllowedOrigins();
+
+  if (allowedOrigins.length === 0 && process.env.NODE_ENV !== "production") {
+    callback(null, true);
+    return;
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+
+  callback(new Error("CORS origin is not allowed."));
+}
+
+function getAllowedOrigins(): string[] {
+  return (process.env.CORS_ORIGIN ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}

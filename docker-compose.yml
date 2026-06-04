@@ -9,6 +9,7 @@ services:
     environment:
       PORT: "3000"
       API_ACCESS_TOKEN: "test-token-1234"
+      CORS_ORIGIN: "https://aco-recycling-task.online"
     volumes:
       - backend-storage:/app/storage
     restart: unless-stopped

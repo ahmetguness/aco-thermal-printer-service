@@ -1,8 +1,21 @@
 import type { Request, Response, NextFunction } from "express";
 import { createApiFailure } from "../types/api.types";
 
+const DEMO_ACCESS_TOKEN = "test-token-1234";
+
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const token = process.env.API_ACCESS_TOKEN || "test-token-1234";
+  const token = resolveAccessToken();
+
+  if (!token) {
+    res.status(500).json(
+      createApiFailure({
+        code: "INTERNAL_ERROR",
+        message: "API access token is not configured.",
+      }),
+    );
+    return;
+  }
+
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -28,4 +41,18 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
   }
 
   next();
+}
+
+function resolveAccessToken(): string | null {
+  const configuredToken = process.env.API_ACCESS_TOKEN?.trim();
+
+  if (configuredToken) {
+    return configuredToken;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
+
+  return DEMO_ACCESS_TOKEN;
 }
